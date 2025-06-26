@@ -9,7 +9,7 @@ export class Home {
         <div class="max-w-7xl mx-auto px-6 flex justify-between items-center h-16">
           <div class="flex items-center space-x-3">
             <img src="../public/logo.png" alt="Logo" class="h-10 w-10" />
-            <span class="text-xl font-bold tracking-wide">SmartWaste+</span>
+            <span class="text-xl font-bold tracking-wide text-gray-900">SmartWaste+</span>
           </div>
           <div class="hidden md:flex space-x-8">
             <a href="#profile" class="hover:underline text-gray-700 font-medium">Profiles</a>
@@ -33,9 +33,9 @@ export class Home {
           <h2 class="text-3xl font-bold text-gray-900 text-center tracking-tight">Your Waste Card</h2>
 
           <div class="grid grid-cols-1 gap-8">
-            <!-- Barcode full width -->
+            <!-- Barcode full width, no human readable text -->
             <img 
-              src="https://barcode.tec-it.com/barcode.ashx?data=SmartWasteUser&code=Code128&translate-esc=true" 
+              src="https://barcode.tec-it.com/barcode.ashx?data=SmartWasteUser&code=Code128&translate-esc=true&hidehrt=true" 
               alt="Barcode" 
               class="mx-auto h-36"
               style="image-rendering: crisp-edges;"
