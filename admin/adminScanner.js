@@ -68,8 +68,8 @@ export class AdminScanner {
     return;
   }
 
-  const senderId = `${admin.displayName}${admin.email}`;
-  const receiverId = userKey;
+  const senderId = admin.uid;
+  const receiverId = userKey; // scanned QR must encode user.uid
 
   if (senderId === receiverId) {
     alert("Cannot send points to yourself.");

@@ -18,7 +18,7 @@ export class History {
         return;
       }
 
-      const userId = `${user.displayName}${user.email}`;
+      const userId = user.uid;
       const historyRef = doc(db, 'history', userId);
       const historySnap = await getDoc(historyRef);
       const log = historySnap.exists() ? historySnap.data().log || [] : [];

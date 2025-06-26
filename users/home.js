@@ -22,7 +22,7 @@ export class Home {
         return;
       }
 
-      const userId = `${user.displayName}${user.email}`;
+      const userId = user.uid;
       const qrData = encodeURIComponent(userId);
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrData}`;
 
