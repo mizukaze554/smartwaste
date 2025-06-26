@@ -32,14 +32,6 @@ export class Profile {
               <input type="file" id="profile-pic-upload" accept="image/*" class="hidden" />
             </div>
 
-            <!-- Profile Pic URL (optional) -->
-            <div>
-              <label for="profile-pic-url" class="block text-lg font-medium text-gray-700 mb-2">Or Use Image URL</label>
-              <input type="url" id="profile-pic-url" placeholder="https://example.com/image.jpg"
-                value="${savedPic.startsWith('data:') ? '' : savedPic}"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600" />
-            </div>
-
             <!-- Name Field -->
             <div>
               <label for="name" class="block text-lg font-medium text-gray-700 mb-2">Name</label>

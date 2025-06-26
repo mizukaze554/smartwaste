@@ -61,18 +61,57 @@ export class AdminScanner {
   }
 
   async awardPointsToUser(userKey) {
-    const userDocRef = doc(db, 'users', userKey);
-    const userSnap = await getDoc(userDocRef);
-
-    if (!userSnap.exists()) {
-      alert("User not found.");
-      return;
-    }
-
-    const prevTotal = userSnap.data().total || 0;
-    const newTotal = prevTotal + 100; // award 100 points
-
-    await updateDoc(userDocRef, { total: newTotal });
-    alert(`✅ 100 points added! New total: ${newTotal}`);
+  const auth = getAuth();
+  const admin = auth.currentUser;
+  if (!admin) {
+    alert("Admin not authenticated.");
+    return;
   }
+
+  const senderId = `${admin.displayName}${admin.email}`;
+  const receiverId = userKey;
+
+  if (senderId === receiverId) {
+    alert("Cannot send points to yourself.");
+    return;
+  }
+
+  const senderRef = doc(db, 'users', senderId);
+  const receiverRef = doc(db, 'users', receiverId);
+
+  const [senderSnap, receiverSnap] = await Promise.all([getDoc(senderRef), getDoc(receiverRef)]);
+
+  if (!receiverSnap.exists()) {
+    alert("Receiver not found.");
+    return;
+  }
+
+  const senderTotal = senderSnap.exists() ? senderSnap.data().total || 0 : 0;
+  const receiverTotal = receiverSnap.exists() ? receiverSnap.data().total || 0 : 0;
+
+  const amount = 100;
+  if (senderTotal < amount) {
+    alert("❌ Not enough points to send.");
+    return;
+  }
+
+  await updateDoc(senderRef, { total: senderTotal - amount });
+  await updateDoc(receiverRef, { total: receiverTotal + amount });
+
+  // Log history under sender
+  const historyRef = doc(db, `history/${senderId}`);
+  const historySnap = await getDoc(historyRef);
+  const history = historySnap.exists() ? historySnap.data().log || [] : [];
+
+  history.push({
+    receiver: receiverId,
+    points: amount,
+    timestamp: new Date().toISOString()
+  });
+
+  await setDoc(historyRef, { log: history }, { merge: true });
+
+  alert(`✅ Sent ${amount} pts to ${receiverId}`);
+}
+
 }

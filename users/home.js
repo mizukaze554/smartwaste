@@ -6,6 +6,7 @@ import { signOutUser } from '../auth/google.js';
 import { renderNavbar, bindNavEvents } from './nav.js';
 import { isAdmin } from '../middleware/admin.js';
 import { AdminScanner } from '../admin/adminScanner.js';
+import { History } from './history.js';
 
 export class Home {
   constructor() {
@@ -31,6 +32,29 @@ export class Home {
       if (!isAdminUser) {
         const userDoc = await getDoc(doc(db, 'users', userId));
         totalPoints = userDoc.exists() ? userDoc.data().total || 0 : 0;
+      }
+
+      // Get user's transaction history
+      let historyHTML = '<p class="text-gray-500">No transactions yet.</p>';
+      try {
+        const historyRef = doc(db, 'history', userId);
+        const historySnap = await getDoc(historyRef);
+        const historyData = historySnap.exists() ? historySnap.data().log || [] : [];
+
+        if (historyData.length > 0) {
+          historyHTML = historyData.reverse().map(entry => `
+            <div class="flex items-start gap-6 p-6 rounded-2xl shadow-lg bg-white hover:shadow-2xl transition">
+              <i class="bi bi-shop text-5xl text-green-600 flex-shrink-0"></i>
+              <div class="grid grid-cols-1 w-full gap-1">
+                <div class="text-xl font-semibold text-gray-900">To: ${entry.receiver}</div>
+                <div class="text-base text-gray-600 leading-relaxed">Sent points to user</div>
+              </div>
+              <div class="ml-auto font-extrabold text-green-600 text-lg">-${entry.points} pts</div>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error loading history:', error);
       }
 
       document.body.innerHTML = `
@@ -131,24 +155,7 @@ export class Home {
 
           <section class="space-y-12">
             <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight select-none">Collection History</h2>
-
-            <div class="flex items-start gap-6 p-6 rounded-2xl shadow-lg bg-white hover:shadow-2xl transition">
-              <i class="bi bi-shop text-5xl text-green-600 flex-shrink-0"></i>
-              <div class="grid grid-cols-1 w-full gap-1">
-                <div class="text-xl font-semibold text-gray-900">GreenMart</div>
-                <div class="text-base text-gray-600 leading-relaxed">Recycled 5 plastic bottles and 2 cans</div>
-              </div>
-              <div class="ml-auto font-extrabold text-green-600 text-lg">+120 pts</div>
-            </div>
-
-            <div class="flex items-start gap-6 p-6 rounded-2xl shadow-lg bg-white hover:shadow-2xl transition">
-              <i class="bi bi-shop text-5xl text-green-600 flex-shrink-0"></i>
-              <div class="grid grid-cols-1 w-full gap-1">
-                <div class="text-xl font-semibold text-gray-900">EcoStore</div>
-                <div class="text-base text-gray-600 leading-relaxed">Recycled small electronics</div>
-              </div>
-              <div class="ml-auto font-extrabold text-green-600 text-lg">+300 pts</div>
-            </div>
+            ${historyHTML}
           </section>
         </main>
       `;
@@ -172,9 +179,8 @@ export class Home {
       }
     });
 
-    // 🔄 NEW: Open Admin Scanner
     document.getElementById('open-scanner')?.addEventListener('click', () => {
-      new AdminScanner(); // replace main view with scanner
+      new AdminScanner();
     });
 
     document.querySelectorAll('.logout').forEach(btn => {
