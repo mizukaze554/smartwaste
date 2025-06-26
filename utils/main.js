@@ -12,7 +12,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Optional: basic login logic
-const loginBtn = document.querySelector('.login');
+const loginBtn = document.querySelectorAll('.login');
 if (loginBtn) {
   loginBtn.addEventListener('click', (e) => {
     e.preventDefault();
