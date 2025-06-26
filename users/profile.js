@@ -51,7 +51,7 @@ export class Profile {
       </main>
     `;
 
-    bindEvents();
+    bindNavEvents();
     this.bindEvents();
   }
 
