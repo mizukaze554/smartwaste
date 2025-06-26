@@ -95,75 +95,79 @@ export class AdminScanner {
   }
 
   async awardPointsToUser(userEmail) {
-    const auth = getAuth();
-    const admin = auth.currentUser;
-    if (!admin) {
-        alert("Admin not authenticated.");
-        return;
-    }
+  const auth = getAuth();
+  const admin = auth.currentUser;
+  if (!admin) {
+    alert("Admin not authenticated.");
+    return;
+  }
 
-    const senderEmail = admin.email.toLowerCase();
-    const receiverEmail = userEmail.trim().toLowerCase();
+  const senderEmail = admin.email.toLowerCase();
+  const receiverEmail = userEmail.trim().toLowerCase();
 
-    if (senderEmail === receiverEmail) {
-        alert("Cannot send points to yourself.");
-        return;
-    }
+  if (senderEmail === receiverEmail) {
+    alert("Cannot send points to yourself.");
+    return;
+  }
 
-    const senderRef = doc(db, 'users', senderEmail);
-    const receiverRef = doc(db, 'users', receiverEmail);
-    const historyRef = doc(db, 'history', senderEmail);
+  const senderRef = doc(db, 'users', senderEmail);
+  const receiverRef = doc(db, 'users', receiverEmail);
+  const senderHistoryRef = doc(db, 'history', senderEmail);
+  const receiverHistoryRef = doc(db, 'history', receiverEmail);
 
-    const senderIsAdmin = await isAdmin();
+  const senderIsAdmin = await isAdmin();
 
-    try {
-        await runTransaction(db, async (transaction) => {
-        const senderDoc = await transaction.get(senderRef);
-        const receiverDoc = await transaction.get(receiverRef);
-        const historyDoc = await transaction.get(historyRef);
+  try {
+    await runTransaction(db, async (transaction) => {
+      const senderDoc = await transaction.get(senderRef);
+      const receiverDoc = await transaction.get(receiverRef);
+      const senderHistoryDoc = await transaction.get(senderHistoryRef);
+      const receiverHistoryDoc = await transaction.get(receiverHistoryRef);
 
-        const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
-        const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
+      const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
+      const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
 
-        // Admins don’t need a balance check
-        if (!senderIsAdmin && senderTotal < this.pointsToGive) {
-            throw new Error(`Not enough points to send. You have ${senderTotal}, tried to send ${this.pointsToGive}.`);
-        }
+      if (!senderIsAdmin && senderTotal < this.pointsToGive) {
+        throw new Error(`Not enough points to send. You have ${senderTotal}, tried to send ${this.pointsToGive}.`);
+      }
 
-        // Update or create sender (deduct only if not admin)
-        if (senderDoc.exists()) {
-            if (!senderIsAdmin) {
-            transaction.update(senderRef, { total: senderTotal - this.pointsToGive });
-            }
-        } else {
-            if (!senderIsAdmin) {
-            transaction.set(senderRef, { total: 0 - this.pointsToGive });
-            }
-        }
+      // Update sender balance
+      if (!senderIsAdmin) {
+        transaction.set(senderRef, { total: senderTotal - this.pointsToGive }, { merge: true });
+      }
 
-        // Update or create receiver
-        if (receiverDoc.exists()) {
-            transaction.update(receiverRef, { total: receiverTotal + this.pointsToGive });
-        } else {
-            transaction.set(receiverRef, { total: this.pointsToGive });
-        }
+      // Update receiver balance
+      transaction.set(receiverRef, { total: receiverTotal + this.pointsToGive }, { merge: true });
 
-        // Update or create transaction history
-        const history = historyDoc.exists() ? (historyDoc.data().log || []) : [];
-        history.push({
-            receiver: receiverEmail,
-            points: this.pointsToGive,
-            timestamp: new Date().toISOString()
-        });
+      const timestamp = new Date().toISOString();
 
-        transaction.set(historyRef, { log: history }, { merge: true });
-        });
+      // Update sender's history (as "sent")
+      const senderLog = senderHistoryDoc.exists() ? senderHistoryDoc.data().log || [] : [];
+      senderLog.push({
+        receiver: receiverEmail,
+        points: this.pointsToGive,
+        timestamp: timestamp,
+        type: "sent"
+      });
+      transaction.set(senderHistoryRef, { log: senderLog }, { merge: true });
 
-        alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
-    } catch (error) {
-        console.error("Transaction failed:", error);
-        alert("Error sending points: " + error.message);
-    }
-    }
+      // Update receiver's history (as "received")
+      const receiverLog = receiverHistoryDoc.exists() ? receiverHistoryDoc.data().log || [] : [];
+      receiverLog.push({
+        sender: senderEmail,
+        points: this.pointsToGive,
+        timestamp: timestamp,
+        type: "received"
+      });
+      transaction.set(receiverHistoryRef, { log: receiverLog }, { merge: true });
+    });
+
+    alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
+  } catch (error) {
+    console.error("Transaction failed:", error);
+    alert("Error sending points: " + error.message);
+  }
+}
+
 
 }
