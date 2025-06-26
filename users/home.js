@@ -5,6 +5,54 @@ export class Home {
 
   render() {
     document.body.innerHTML = `
+      <style>
+        /* Flip card container */
+        .flip-card {
+          perspective: 1000px;
+          width: 160px;
+          height: 160px;
+        }
+        /* Inner part with transition */
+        .flip-card-inner {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          transition: transform 0.6s;
+          transform-style: preserve-3d;
+          cursor: pointer;
+        }
+        /* Flip the card when toggled */
+        .flip-card.flipped .flip-card-inner {
+          transform: rotateY(180deg);
+        }
+        /* Front and back faces */
+        .flip-card-front, .flip-card-back {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          backface-visibility: hidden;
+          border-radius: 0.5rem;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        /* Front: QR code */
+        .flip-card-front {
+          background: white;
+        }
+        /* Back: total points */
+        .flip-card-back {
+          background: #d1fae5; /* Tailwind green-100 */
+          color: #16a34a; /* Tailwind green-600 */
+          font-weight: 700;
+          font-size: 2rem;
+          transform: rotateY(180deg);
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+      </style>
+
       <nav class="fixed top-0 w-full bg-white border-b shadow-sm z-50">
         <div class="max-w-7xl mx-auto px-6 flex justify-between items-center h-16">
           <div class="flex items-center space-x-3">
@@ -32,12 +80,24 @@ export class Home {
         <section class="bg-white shadow-xl rounded-2xl p-8 space-y-8">
           <h2 class="text-3xl font-bold text-gray-900 text-center tracking-tight">Your Waste Card</h2>
 
-          <div class="flex flex-col md:flex-row justify-center items-center gap-8 px-6">
-            <img 
-              src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=SmartWasteUser" 
-              alt="QR Code" 
-              class="w-40 h-40 rounded-lg shadow-md"
-            />
+          <div class="flex flex-col md:flex-row justify-center items-center gap-12 px-6">
+            <!-- Flip card container -->
+            <div class="flip-card" id="flip-card">
+              <div class="flip-card-inner">
+                <div class="flip-card-front">
+                  <img 
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=SmartWasteUser" 
+                    alt="QR Code" 
+                    class="w-full h-full rounded-lg"
+                  />
+                </div>
+                <div class="flip-card-back">
+                  <div>Total Points</div>
+                  <div class="text-4xl font-extrabold tracking-wide">420 pts</div>
+                </div>
+              </div>
+            </div>
+
             <div class="text-center md:text-left">
               <div class="text-xl font-semibold text-gray-900 mb-2">Total Points</div>
               <div class="text-5xl font-extrabold text-green-600 tracking-wide">420 pts</div>
@@ -75,6 +135,13 @@ export class Home {
   }
 
   bindEvents() {
+    // Flip card toggle
+    const flipCard = document.getElementById('flip-card');
+    flipCard.addEventListener('click', () => {
+      flipCard.classList.toggle('flipped');
+    });
+
+    // Logout buttons
     document.querySelectorAll('.logout').forEach(btn => {
       btn.addEventListener('click', () => {
         document.cookie = 'route=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
@@ -82,6 +149,7 @@ export class Home {
       });
     });
 
+    // Mobile menu toggle
     document.getElementById('mobile-menu-button')?.addEventListener('click', () => {
       document.getElementById('mobile-menu')?.classList.toggle('hidden');
     });
