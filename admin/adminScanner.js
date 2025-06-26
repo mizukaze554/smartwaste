@@ -120,6 +120,9 @@ export class AdminScanner {
     await setDoc(receiverRef, { total: 0 });
   }
 
+  // Check if sender is admin (assuming you have a method isAdmin())
+  const senderIsAdmin = await isAdmin();
+
   try {
     await runTransaction(db, async (transaction) => {
       const senderDoc = await transaction.get(senderRef);
@@ -129,11 +132,12 @@ export class AdminScanner {
       const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
       const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
 
-      if (senderTotal < this.pointsToGive) {
+      // Only check points if sender is NOT admin
+      if (!senderIsAdmin && senderTotal < this.pointsToGive) {
         throw new Error(`Not enough points to send. You have ${senderTotal} pts, tried to send ${this.pointsToGive} pts.`);
       }
 
-      transaction.update(senderRef, { total: senderTotal - this.pointsToGive });
+      transaction.update(senderRef, { total: senderTotal - (senderIsAdmin ? 0 : this.pointsToGive) });
       transaction.update(receiverRef, { total: receiverTotal + this.pointsToGive });
 
       const history = historyDoc.exists() ? historyDoc.data().log || [] : [];
@@ -153,5 +157,6 @@ export class AdminScanner {
     alert("Error sending points: " + error.message);
   }
 }
+
 
 }
