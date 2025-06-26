@@ -132,7 +132,7 @@ export class Home {
                         ? `<i class="bi bi-infinity text-6xl text-green-600"></i>`
                         : `
                           <div class="text-lg font-semibold">Total Points</div>
-                          <div class="text-5xl font-extrabold tracking-wide">${totalPoints} pts</div>
+                          <div class="text-xl font-extrabold tracking-wide">${totalPoints} pts</div>
                         `
                     }
                   </div>
