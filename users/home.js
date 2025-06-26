@@ -11,6 +11,7 @@ export class Home {
           perspective: 1000px;
           width: 160px;
           height: 160px;
+          cursor: pointer;
         }
         /* Inner part with transition */
         .flip-card-inner {
@@ -19,7 +20,6 @@ export class Home {
           height: 100%;
           transition: transform 0.6s;
           transform-style: preserve-3d;
-          cursor: pointer;
         }
         /* Flip the card when toggled */
         .flip-card.flipped .flip-card-inner {
