@@ -22,15 +22,15 @@ export class Home {
         return;
       }
 
-      const userId = user.uid;
-      const qrData = encodeURIComponent(userId);
+      const userEmail = user.email.toLowerCase();
+      const qrData = encodeURIComponent(userEmail);
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrData}`;
 
       const isAdminUser = await isAdmin();
       let totalPoints = 0;
 
       if (!isAdminUser) {
-        const userDoc = await getDoc(doc(db, 'users', userId));
+        const userDoc = await getDoc(doc(db, 'users', userEmail));
         totalPoints = userDoc.exists() ? userDoc.data().total || 0 : 0;
       }
 
