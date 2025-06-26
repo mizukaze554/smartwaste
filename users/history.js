@@ -29,12 +29,12 @@ export class History {
       try {
         const userEmail = user.email.toLowerCase();
 
-        // Get current user's sent transactions (their own history doc)
+        // 读取当前用户作为发送者的交易历史
         const sentRef = doc(db, 'history', userEmail);
         const sentSnap = await getDoc(sentRef);
         const sentLog = sentSnap.exists() ? sentSnap.data().log || [] : [];
 
-        // Get all history docs to find received transactions
+        // 遍历所有发送者文档，找出接收者为当前用户的交易
         const historyCollection = collection(db, 'history');
         const allHistories = await getDocs(historyCollection);
 
@@ -53,7 +53,7 @@ export class History {
           });
         });
 
-        // Merge sent and received logs, tagging each entry for display
+        // 合并发送和接收日志，方便统一渲染
         const unifiedLog = [
           ...sentLog.map(entry => ({
             ...entry,
@@ -75,10 +75,10 @@ export class History {
           }))
         ];
 
-        // Sort by timestamp descending (most recent first)
+        // 按时间倒序排列
         unifiedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        // Render page with unified log
+        // 渲染页面
         document.body.innerHTML = `
           ${renderNavbar()}
           <main class="pt-36 px-6 max-w-4xl mx-auto space-y-16">
