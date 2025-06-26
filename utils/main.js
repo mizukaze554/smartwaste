@@ -6,7 +6,8 @@ window.addEventListener('DOMContentLoaded', () => {
   const route = getCookie('route');
   if (route === '/users/dashboard') {
     document.body.innerHTML = '';
-    new Home(); // instantiate the UI
+    history.replaceState({}, '', route);
+    new Home();
   }
 });
 
@@ -16,7 +17,9 @@ if (loginBtn) {
     e.preventDefault();
 
     document.body.innerHTML = '';
-    setCookie('route', '/users/dashboard', 7);
-    new Home(); // instantiate the UI
+    const path = '/users/dashboard';
+    setCookie('route', path, 7);
+    history.pushState({}, '', path);
+    new Home();
   });
 }
