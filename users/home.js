@@ -1,3 +1,6 @@
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+import { app } from '../firebase/main.js';
+
 export class Home {
   constructor() {
     this.render();
@@ -166,8 +169,18 @@ export class Home {
     // Logout buttons
     document.querySelectorAll('.logout').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.cookie = 'route=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        window.location.href = '/';
+        const auth = getAuth(app);
+
+        signOut(auth)
+          .then(() => {
+            // Clear any cookies or local routing info
+            document.cookie = 'route=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            // Redirect to home/login
+            window.location.href = '/';
+          })
+          .catch((error) => {
+            console.error("Logout error:", error);
+          });
       });
     });
 
