@@ -12,7 +12,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Handle login click
-const loginBtn = document.getElementById('login');
+const loginBtn = document.getElementsByClassName('login');
 if (loginBtn) {
   loginBtn.addEventListener('click', (e) => {
     e.preventDefault();
