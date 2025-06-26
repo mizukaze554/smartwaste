@@ -95,61 +95,63 @@ export class AdminScanner {
   }
 
   async awardPointsToUser(userEmail) {
-    const auth = getAuth();
-    const admin = auth.currentUser;
-    if (!admin) {
-        alert("Admin not authenticated.");
-        return;
-    }
+  const auth = getAuth();
+  const admin = auth.currentUser;
+  if (!admin) {
+    alert("Admin not authenticated.");
+    return;
+  }
 
-    const senderEmail = admin.email;
-    const receiverEmail = userEmail.trim().toLowerCase();
+  const senderEmail = admin.email.toLowerCase();
+  const receiverEmail = userEmail.trim().toLowerCase();
 
-    if (senderEmail === receiverEmail) {
-        alert("Cannot send points to yourself.");
-        return;
-    }
+  if (senderEmail === receiverEmail) {
+    alert("Cannot send points to yourself.");
+    return;
+  }
 
-    const senderRef = doc(db, 'users', senderEmail);
-    const receiverRef = doc(db, 'users', receiverEmail);
-    const historyRef = doc(db, 'history', senderEmail);
+  const senderRef = doc(db, 'users', senderEmail);
+  const receiverRef = doc(db, 'users', receiverEmail);
+  const historyRef = doc(db, 'history', senderEmail);
 
-    try {
-        await runTransaction(db, async (transaction) => {
-        const senderDoc = await transaction.get(senderRef);
-        const receiverDoc = await transaction.get(receiverRef);
-        const historyDoc = await transaction.get(historyRef);
+  try {
+    await runTransaction(db, async (transaction) => {
+      const senderDoc = await transaction.get(senderRef);
+      let receiverDoc = await transaction.get(receiverRef);
+      const historyDoc = await transaction.get(historyRef);
 
-        if (!receiverDoc.exists()) {
-            throw new Error("Receiver not found.");
-        }
+      // If receiver not found, create with initial total=0
+      if (!receiverDoc.exists()) {
+        transaction.set(receiverRef, { total: 0 });
+        receiverDoc = await transaction.get(receiverRef); // refresh receiverDoc after set
+      }
 
-        const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
-        const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
+      const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
+      const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
 
-        if (senderTotal < this.pointsToGive) {
-            throw new Error(`Not enough points to send. You have ${senderTotal} pts, tried to send ${this.pointsToGive} pts.`);
-        }
+      if (senderTotal < this.pointsToGive) {
+        throw new Error(`Not enough points to send. You have ${senderTotal} pts, tried to send ${this.pointsToGive} pts.`);
+      }
 
-        transaction.update(senderRef, { total: senderTotal - this.pointsToGive });
-        transaction.update(receiverRef, { total: receiverTotal + this.pointsToGive });
+      transaction.update(senderRef, { total: senderTotal - this.pointsToGive });
+      transaction.update(receiverRef, { total: receiverTotal + this.pointsToGive });
 
-        const history = historyDoc.exists() ? historyDoc.data().log || [] : [];
-        history.push({
-            receiver: receiverEmail,
-            points: this.pointsToGive,
-            timestamp: new Date().toISOString()
-        });
+      const history = historyDoc.exists() ? historyDoc.data().log || [] : [];
+      history.push({
+        receiver: receiverEmail,
+        points: this.pointsToGive,
+        timestamp: new Date().toISOString()
+      });
 
-        transaction.set(historyRef, { log: history }, { merge: true });
-        });
+      transaction.set(historyRef, { log: history }, { merge: true });
+    });
 
-        alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
+    alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
 
-    } catch (error) {
-        console.error("Transaction failed:", error);
-        alert("Error sending points: " + error.message);
-    }
-    }
+  } catch (error) {
+    console.error("Transaction failed:", error);
+    alert("Error sending points: " + error.message);
+  }
+}
 
 }
