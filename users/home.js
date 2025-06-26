@@ -8,7 +8,7 @@ export class Home {
       <nav class="fixed top-0 w-full bg-white border-b shadow-sm z-50">
         <div class="max-w-7xl mx-auto px-4 flex justify-between items-center h-16">
           <div class="flex items-center space-x-3">
-            <img src="./public/logo.png" alt="Logo" class="h-10 w-10" />
+            <img src="../public/logo.png" alt="Logo" class="h-10 w-10" />
             <span class="text-xl font-bold">SmartWaste+</span>
           </div>
           <div class="hidden md:flex space-x-6">
@@ -29,11 +29,29 @@ export class Home {
 
       <main class="pt-24 px-6 max-w-4xl mx-auto space-y-16">
         <!-- Hero Card -->
-        <section class="bg-white shadow-lg rounded-xl p-6 text-center space-y-4">
-          <h2 class="text-2xl font-bold text-gray-800">Your Waste Card</h2>
-          <div class="flex justify-center gap-10 flex-wrap">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=SmartWasteUser" alt="QR Code" class="w-32 h-32 rounded" />
-            <img src="https://barcode.tec-it.com/barcode.ashx?data=SmartWasteUser&code=Code128&translate-esc=true" alt="Barcode" class="h-32" />
+        <section class="bg-white shadow-lg rounded-xl p-6 space-y-6">
+          <h2 class="text-2xl font-bold text-gray-800 text-center">Your Waste Card</h2>
+
+          <div class="grid grid-cols-1 gap-6">
+            <!-- Barcode full width -->
+            <img 
+              src="https://barcode.tec-it.com/barcode.ashx?data=SmartWasteUser&code=Code128&translate-esc=true" 
+              alt="Barcode" 
+              class="mx-auto h-32"
+            />
+
+            <!-- QR code and points flex -->
+            <div class="flex justify-between items-center px-4">
+              <img 
+                src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=SmartWasteUser" 
+                alt="QR Code" 
+                class="w-32 h-32 rounded"
+              />
+              <div class="text-right">
+                <div class="text-lg font-semibold text-gray-800">Total Points</div>
+                <div class="text-3xl font-bold text-green-600">420 pts</div>
+              </div>
+            </div>
           </div>
         </section>
 
