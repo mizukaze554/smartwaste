@@ -140,17 +140,11 @@ export class Home {
               </div>
             </div>
 
-            ${
-              isAdminUser
-                ? `
-                  <div class="text-center pt-8">
-                    <button id="open-scanner" class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition">
-                      Open Scanner
-                    </button>
-                  </div>
-                `
-                : ''
-            }
+            <div class="text-center pt-8">
+              <button id="open-scanner" class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition">
+                Open Scanner
+              </button>
+            </div>
           </section>
 
           <section class="space-y-12">
