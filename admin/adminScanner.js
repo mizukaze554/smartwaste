@@ -114,17 +114,17 @@ export class AdminScanner {
   const receiverRef = doc(db, 'users', receiverEmail);
   const historyRef = doc(db, 'history', senderEmail);
 
+  // Create receiver doc if missing BEFORE transaction
+  const receiverSnap = await getDoc(receiverRef);
+  if (!receiverSnap.exists()) {
+    await setDoc(receiverRef, { total: 0 });
+  }
+
   try {
     await runTransaction(db, async (transaction) => {
       const senderDoc = await transaction.get(senderRef);
-      let receiverDoc = await transaction.get(receiverRef);
+      const receiverDoc = await transaction.get(receiverRef);
       const historyDoc = await transaction.get(historyRef);
-
-      // If receiver not found, create with initial total=0
-      if (!receiverDoc.exists()) {
-        transaction.set(receiverRef, { total: 0 });
-        receiverDoc = await transaction.get(receiverRef); // refresh receiverDoc after set
-      }
 
       const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
       const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
