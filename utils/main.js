@@ -2,27 +2,21 @@
 import { setCookie, getCookie } from '../cookie/main.js';
 import { Home } from '../users/home.js';
 
-// Check if user is already logged in
 window.addEventListener('DOMContentLoaded', () => {
   const route = getCookie('route');
   if (route === '/users/dashboard') {
     document.body.innerHTML = '';
-    Home();
+    new Home(); // instantiate the UI
   }
 });
 
-// Handle login click
-const loginBtn = document.getElementById('login');
+const loginBtn = document.querySelector('.login');
 if (loginBtn) {
   loginBtn.addEventListener('click', (e) => {
     e.preventDefault();
 
-    // Clear existing DOM content
     document.body.innerHTML = '';
-
-    // Save cookie and show Home UI
-    const path = '/users/dashboard';
-    setCookie('route', path, 7); // cookie expires in 7 days
-    Home();
+    setCookie('route', '/users/dashboard', 7);
+    new Home(); // instantiate the UI
   });
 }
