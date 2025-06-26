@@ -1,4 +1,3 @@
-// users/home.js
 export class Home {
   constructor() {
     this.render();
@@ -27,8 +26,40 @@ export class Home {
           <button class="logout block w-full text-left px-4 py-3 bg-red-600 text-white text-center rounded-b hover:bg-red-700 transition">Logout</button>
         </div>
       </nav>
-      <main class="pt-20 px-6">
-        <h1 class="text-3xl font-bold text-gray-800">Welcome to the Dashboard</h1>
+
+      <main class="pt-24 px-6 max-w-4xl mx-auto space-y-16">
+        <!-- Hero Card -->
+        <section class="bg-white shadow-lg rounded-xl p-6 text-center space-y-4">
+          <h2 class="text-2xl font-bold text-gray-800">Your Waste Card</h2>
+          <div class="flex justify-center gap-10 flex-wrap">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=SmartWasteUser" alt="QR Code" class="w-32 h-32 rounded" />
+            <img src="https://barcode.tec-it.com/barcode.ashx?data=SmartWasteUser&code=Code128&translate-esc=true" alt="Barcode" class="h-32" />
+          </div>
+        </section>
+
+        <!-- History Section -->
+        <section class="space-y-6">
+          <h2 class="text-2xl font-bold text-gray-800">Collection History</h2>
+          
+          <!-- Example Entry -->
+          <div class="flex items-start gap-4 p-4 rounded-lg shadow bg-white hover:shadow-md transition">
+            <i class="bi bi-shop text-3xl text-green-600"></i>
+            <div class="grid grid-cols-1 w-full gap-1">
+              <div class="text-lg font-semibold text-gray-800">GreenMart</div>
+              <div class="text-sm text-gray-500">Recycled 5 plastic bottles and 2 cans</div>
+            </div>
+            <div class="ml-auto font-bold text-green-600">+120 pts</div>
+          </div>
+
+          <div class="flex items-start gap-4 p-4 rounded-lg shadow bg-white hover:shadow-md transition">
+            <i class="bi bi-shop text-3xl text-green-600"></i>
+            <div class="grid grid-cols-1 w-full gap-1">
+              <div class="text-lg font-semibold text-gray-800">EcoStore</div>
+              <div class="text-sm text-gray-500">Recycled small electronics</div>
+            </div>
+            <div class="ml-auto font-bold text-green-600">+300 pts</div>
+          </div>
+        </section>
       </main>
     `;
 
