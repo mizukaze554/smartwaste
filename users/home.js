@@ -6,7 +6,6 @@ import { signOutUser } from '../auth/google.js';
 import { renderNavbar, bindNavEvents } from './nav.js';
 import { isAdmin } from '../middleware/admin.js';
 import { AdminScanner } from '../admin/adminScanner.js';
-import { History } from './history.js';
 
 export class Home {
   constructor() {
@@ -37,7 +36,7 @@ export class Home {
       // Get user's transaction history
       let historyHTML = '<p class="text-gray-500">No transactions yet.</p>';
       try {
-        const historyRef = doc(db, 'history', userId);
+        const historyRef = doc(db, 'history', userEmail); // ✅ FIXED here
         const historySnap = await getDoc(historyRef);
         const historyData = historySnap.exists() ? historySnap.data().log || [] : [];
 
