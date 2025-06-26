@@ -128,6 +128,7 @@ export class Home {
     `;
 
     bindEvents();
+    this.bindEvents();
   }
 
   bindEvents() {

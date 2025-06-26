@@ -52,6 +52,7 @@ export class Profile {
     `;
 
     bindEvents();
+    this.bindEvents();
   }
 
   bindEvents() {
