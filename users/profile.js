@@ -8,50 +8,53 @@ export class Profile {
 
   render() {
     const savedName = localStorage.getItem('userName') || '';
-    const savedPic = localStorage.getItem('userPic') || ''; // can be URL or base64
+    const savedPic = localStorage.getItem('userPic') || '';
 
     document.body.innerHTML = `
       ${renderNavbar()}
 
-      <main class="pt-36 px-6 max-w-2xl mx-auto space-y-12">
-        <section class="bg-white shadow-2xl rounded-3xl p-10 space-y-8">
-          <h2 class="text-4xl font-extrabold text-gray-900 text-center tracking-tight select-none">
-            Your Profile
-          </h2>
+      <main class="pt-36 px-4 max-w-xl mx-auto">
+        <section class="bg-white shadow-xl rounded-3xl p-8 space-y-10">
+          <h2 class="text-3xl font-bold text-center text-gray-800 select-none">Edit Profile</h2>
 
-          <form id="profile-form" class="space-y-6">
-            <div>
-              <label for="name" class="block text-lg font-semibold text-gray-700 mb-2">Name</label>
-              <input type="text" id="name" name="name" value="${savedName}" placeholder="Your full name" required
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600" />
-            </div>
-
-            <div>
-              <label for="profile-pic-url" class="block text-lg font-semibold text-gray-700 mb-2">Profile Picture URL (optional)</label>
-              <input type="url" id="profile-pic-url" name="profile-pic-url" value="${savedPic.startsWith('data:') ? '' : savedPic}" placeholder="Image URL"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600" />
-            </div>
-
-            <div>
-              <label for="profile-pic-upload" class="block text-lg font-semibold text-gray-700 mb-2">Or Upload Profile Picture</label>
-              <input type="file" id="profile-pic-upload" accept="image/*"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600" />
-            </div>
-
+          <form id="profile-form" class="grid grid-cols-1 gap-8">
+            <!-- Profile Picture Circle -->
             <div class="flex justify-center">
+              <label for="profile-pic-upload" class="cursor-pointer group relative">
+                <img id="profile-preview" 
+                     src="${savedPic || 'https://via.placeholder.com/160'}" 
+                     alt="Profile Picture" 
+                     class="rounded-full w-40 h-40 object-cover border-4 border-green-600 shadow-lg transition-transform group-hover:scale-105" />
+                <div class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white font-semibold">
+                  Change
+                </div>
+              </label>
+              <input type="file" id="profile-pic-upload" accept="image/*" class="hidden" />
+            </div>
+
+            <!-- Profile Pic URL (optional) -->
+            <div>
+              <label for="profile-pic-url" class="block text-lg font-medium text-gray-700 mb-2">Or Use Image URL</label>
+              <input type="url" id="profile-pic-url" placeholder="https://example.com/image.jpg"
+                value="${savedPic.startsWith('data:') ? '' : savedPic}"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600" />
+            </div>
+
+            <!-- Name Field -->
+            <div>
+              <label for="name" class="block text-lg font-medium text-gray-700 mb-2">Name</label>
+              <input type="text" id="name" value="${savedName}" placeholder="Your full name"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-600" required />
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-center">
               <button type="submit"
-                class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold shadow hover:bg-green-700 transition">
-                Save Profile
+                class="bg-green-600 text-white px-10 py-3 rounded-xl font-semibold shadow hover:bg-green-700 transition">
+                Save Changes
               </button>
             </div>
           </form>
-
-          <div class="text-center">
-            <h3 class="text-xl font-semibold mb-2">Preview</h3>
-            <img id="profile-preview" src="${savedPic || 'https://via.placeholder.com/160'}" alt="Profile Picture Preview"
-              class="mx-auto rounded-full w-40 h-40 object-cover border-4 border-green-600 shadow-lg" />
-            <p id="name-preview" class="mt-4 text-2xl font-bold text-gray-900">${savedName || 'Your Name'}</p>
-          </div>
         </section>
       </main>
     `;
@@ -66,9 +69,8 @@ export class Profile {
     const urlInput = form.querySelector('#profile-pic-url');
     const fileInput = form.querySelector('#profile-pic-upload');
     const previewImg = document.getElementById('profile-preview');
-    const previewName = document.getElementById('name-preview');
 
-    // When user selects a file, convert it to Base64 and preview
+    // File Upload: Base64 conversion
     fileInput.addEventListener('change', () => {
       const file = fileInput.files[0];
       if (!file) return;
@@ -77,63 +79,43 @@ export class Profile {
       reader.onload = (e) => {
         const base64 = e.target.result;
         previewImg.src = base64;
-
-        // Clear URL input to avoid conflicts
-        urlInput.value = '';
+        urlInput.value = ''; // clear url input
       };
       reader.readAsDataURL(file);
     });
 
-    // When user edits URL input, update preview (if URL given)
+    // URL input updates preview
     urlInput.addEventListener('input', () => {
-      if (urlInput.value.trim()) {
-        previewImg.src = urlInput.value.trim();
-        // Clear file input to avoid conflicts
-        fileInput.value = '';
-      } else if (!fileInput.files.length) {
+      const url = urlInput.value.trim();
+      if (url) {
+        previewImg.src = url;
+        fileInput.value = ''; // clear file input
+      } else {
         previewImg.src = 'https://via.placeholder.com/160';
       }
     });
 
+    // Form submit
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const name = nameInput.value.trim();
       const picUrl = urlInput.value.trim();
-      const fileSelected = fileInput.files.length > 0;
+      const isBase64 = previewImg.src.startsWith('data:');
 
-      if (!name) {
-        alert('Please enter your name.');
-        return;
-      }
+      if (!name) return alert('Please enter your name.');
 
-      if (!picUrl && !fileSelected && !previewImg.src.startsWith('data:')) {
-        alert('Please provide a profile picture URL or upload an image.');
-        return;
-      }
-
-      // Save name
       localStorage.setItem('userName', name);
+      localStorage.setItem('userPic', isBase64 ? previewImg.src : picUrl || previewImg.src);
 
-      // Save profile pic: priority to file upload (base64), else URL
-      if (fileSelected) {
-        // We already updated previewImg.src with base64 on file select,
-        // so just save that
-        localStorage.setItem('userPic', previewImg.src);
-      } else {
-        localStorage.setItem('userPic', picUrl);
-      }
-
-      previewName.textContent = name;
-
-      alert('Profile saved!');
+      alert('Profile updated!');
     });
 
     // Logout buttons in navbar
-    document.querySelectorAll('.logout').forEach(btn => {
-      btn.addEventListener('click', signOutUser);
-    });
+    document.querySelectorAll('.logout').forEach(btn =>
+      btn.addEventListener('click', signOutUser)
+    );
 
-    // Mobile menu toggle
+    // Mobile menu
     document.getElementById('mobile-menu-button')?.addEventListener('click', () => {
       document.getElementById('mobile-menu')?.classList.toggle('hidden');
     });
