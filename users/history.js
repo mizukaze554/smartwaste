@@ -1,8 +1,8 @@
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 import {
   doc,
-  getDoc,
   collection,
+  getDoc,
   getDocs
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { app } from '../firebase/main.js';
@@ -29,65 +29,72 @@ export class History {
       try {
         const userEmail = user.email.toLowerCase();
 
-        // Sent transactions (your own document)
+        // Get current user's sent transactions (their own history doc)
         const sentRef = doc(db, 'history', userEmail);
         const sentSnap = await getDoc(sentRef);
         const sentLog = sentSnap.exists() ? sentSnap.data().log || [] : [];
 
-        // Received transactions (search others' logs)
+        // Get all history docs to find received transactions
         const historyCollection = collection(db, 'history');
         const allHistories = await getDocs(historyCollection);
 
         const receivedLog = [];
+
         allHistories.forEach(docSnap => {
+          const senderEmail = docSnap.id.toLowerCase();
           const log = docSnap.data().log || [];
           log.forEach(entry => {
             if (entry.receiver?.toLowerCase() === userEmail) {
               receivedLog.push({
-                sender: docSnap.id,
-                ...entry
+                ...entry,
+                sender: senderEmail
               });
             }
           });
         });
 
-        // Sort both lists (most recent first)
-        sentLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        receivedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // Merge sent and received logs, tagging each entry for display
+        const unifiedLog = [
+          ...sentLog.map(entry => ({
+            ...entry,
+            type: 'sent',
+            party: entry.receiver,
+            sign: '-',
+            cssBorder: 'border-green-200',
+            cssText: 'text-green-600',
+            directionText: 'To'
+          })),
+          ...receivedLog.map(entry => ({
+            ...entry,
+            type: 'received',
+            party: entry.sender,
+            sign: '+',
+            cssBorder: 'border-blue-200',
+            cssText: 'text-blue-600',
+            directionText: 'From'
+          }))
+        ];
 
+        // Sort by timestamp descending (most recent first)
+        unifiedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        // Render page with unified log
         document.body.innerHTML = `
           ${renderNavbar()}
           <main class="pt-36 px-6 max-w-4xl mx-auto space-y-16">
             <section>
-              <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Sent Points</h2>
+              <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Full Transaction History</h2>
               <div class="space-y-6">
                 ${
-                  sentLog.length === 0
-                    ? `<p class="text-gray-500">No points sent.</p>`
-                    : sentLog.map(entry => `
-                        <div class="bg-white p-5 shadow-md rounded-xl border border-green-200">
-                          <div class="text-lg font-semibold text-gray-800">To: ${entry.receiver}</div>
-                          <div class="text-green-600 font-bold text-xl">- ${entry.points} pts</div>
-                          <div class="text-sm text-gray-500 mt-1">${new Date(entry.timestamp).toLocaleString()}</div>
-                        </div>
-                      `).join('')
-                }
-              </div>
-            </section>
-
-            <section>
-              <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Received Points</h2>
-              <div class="space-y-6">
-                ${
-                  receivedLog.length === 0
-                    ? `<p class="text-gray-500">No points received.</p>`
-                    : receivedLog.map(entry => `
-                        <div class="bg-white p-5 shadow-md rounded-xl border border-blue-200">
-                          <div class="text-lg font-semibold text-gray-800">From: ${entry.sender}</div>
-                          <div class="text-blue-600 font-bold text-xl">+ ${entry.points} pts</div>
-                          <div class="text-sm text-gray-500 mt-1">${new Date(entry.timestamp).toLocaleString()}</div>
-                        </div>
-                      `).join('')
+                  unifiedLog.length === 0
+                    ? `<p class="text-gray-500">No transactions yet.</p>`
+                    : unifiedLog.map(entry => `
+                      <div class="bg-white p-5 shadow-md rounded-xl border ${entry.cssBorder}">
+                        <div class="text-lg font-semibold text-gray-800">${entry.directionText}: ${entry.party}</div>
+                        <div class="${entry.cssText} font-bold text-xl">${entry.sign} ${entry.points} pts</div>
+                        <div class="text-sm text-gray-500 mt-1">${new Date(entry.timestamp).toLocaleString()}</div>
+                      </div>
+                    `).join('')
                 }
               </div>
             </section>
