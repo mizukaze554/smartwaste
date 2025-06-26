@@ -46,7 +46,7 @@ export class Home {
         }
         /* Back: total points */
         .flip-card-back {
-          background: #d1fae5; /* Tailwind green-100 */
+          background: white;
           color: #16a34a; /* Tailwind green-600 */
           font-weight: 700;
           font-size: 1.875rem; /* text-3xl */
