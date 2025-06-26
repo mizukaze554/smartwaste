@@ -1,8 +1,15 @@
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 import { isAdmin } from '../middleware/admin.js';
 import { db } from '../firebase/db.js';
-import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  runTransaction,
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { renderNavbar, bindNavEvents } from '../users/nav.js';
+
+// Make sure you have jsQR loaded globally in your HTML for QR decoding
 
 export class AdminScanner {
   constructor() {
@@ -13,15 +20,12 @@ export class AdminScanner {
   async render() {
     // Ask how many points to give BEFORE camera starts
     const input = prompt("Enter the number of points to give:");
-
     const points = Number(input);
     if (isNaN(points) || points <= 0) {
       alert("Please enter a valid positive number of points.");
-      // Optionally redirect or reload to go back
       window.history.back();
       return;
     }
-
     this.pointsToGive = points;
 
     document.body.innerHTML = `
@@ -69,7 +73,7 @@ export class AdminScanner {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
-        // Use jsQR to decode
+        // Decode QR code with jsQR (make sure jsQR is included in your project)
         const code = jsQR(imageData.data, canvas.width, canvas.height);
         if (code) {
           status.textContent = `QR Code detected: ${code.data}`;
@@ -79,7 +83,7 @@ export class AdminScanner {
           // Award points
           await this.awardPointsToUser(code.data);
 
-          // Optionally reset or reload to scan again
+          // Optionally reload page or close scanner
           // window.location.reload();
           return; // stop scanning after one detection
         }
@@ -99,7 +103,7 @@ export class AdminScanner {
     }
 
     const senderId = admin.uid;
-    const receiverId = userKey; // scanned QR must encode user.uid
+    const receiverId = userKey; // QR must encode uid exactly
 
     if (senderId === receiverId) {
       alert("Cannot send points to yourself.");
@@ -108,39 +112,45 @@ export class AdminScanner {
 
     const senderRef = doc(db, 'users', senderId);
     const receiverRef = doc(db, 'users', receiverId);
+    const historyRef = doc(db, 'history', senderId);
 
-    const [senderSnap, receiverSnap] = await Promise.all([getDoc(senderRef), getDoc(receiverRef)]);
+    try {
+      await runTransaction(db, async (transaction) => {
+        const senderDoc = await transaction.get(senderRef);
+        const receiverDoc = await transaction.get(receiverRef);
+        const historyDoc = await transaction.get(historyRef);
 
-    if (!receiverSnap.exists()) {
-      alert("Receiver not found.");
-      return;
+        if (!receiverDoc.exists()) {
+          throw new Error("Receiver not found.");
+        }
+
+        const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
+        const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
+
+        if (senderTotal < this.pointsToGive) {
+          throw new Error(`Not enough points to send. You have ${senderTotal} pts, tried to send ${this.pointsToGive} pts.`);
+        }
+
+        // Update sender and receiver totals atomically
+        transaction.update(senderRef, { total: senderTotal - this.pointsToGive });
+        transaction.update(receiverRef, { total: receiverTotal + this.pointsToGive });
+
+        // Append to history log
+        const history = historyDoc.exists() ? historyDoc.data().log || [] : [];
+        history.push({
+          receiver: receiverId,
+          points: this.pointsToGive,
+          timestamp: new Date().toISOString()
+        });
+
+        transaction.set(historyRef, { log: history }, { merge: true });
+      });
+
+      alert(`✅ Sent ${this.pointsToGive} pts to ${receiverId}`);
+
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      alert("Error sending points: " + error.message);
     }
-
-    const senderTotal = senderSnap.exists() ? senderSnap.data().total || 0 : 0;
-    const receiverTotal = receiverSnap.exists() ? receiverSnap.data().total || 0 : 0;
-
-    const amount = this.pointsToGive;
-    if (senderTotal < amount) {
-      alert(`❌ Not enough points to send. You have ${senderTotal} pts, tried to send ${amount} pts.`);
-      return;
-    }
-
-    await updateDoc(senderRef, { total: senderTotal - amount });
-    await updateDoc(receiverRef, { total: receiverTotal + amount });
-
-    // Log history under sender
-    const historyRef = doc(db, `history/${senderId}`);
-    const historySnap = await getDoc(historyRef);
-    const history = historySnap.exists() ? historySnap.data().log || [] : [];
-
-    history.push({
-      receiver: receiverId,
-      points: amount,
-      timestamp: new Date().toISOString()
-    });
-
-    await setDoc(historyRef, { log: history }, { merge: true });
-
-    alert(`✅ Sent ${amount} pts to ${receiverId}`);
   }
 }
