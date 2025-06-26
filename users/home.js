@@ -127,7 +127,7 @@ export class Home {
       </main>
     `;
 
-    this.bindEvents();
+    bindEvents();
   }
 
   bindEvents() {
