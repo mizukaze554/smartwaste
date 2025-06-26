@@ -1,7 +1,7 @@
 import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 import { app } from '../firebase/main.js';
 import { signOutUser } from '../auth/google.js';
-import { renderNavbar } from './nav.js';
+import { renderNavbar, bindNavEvents } from './nav.js';
 
 export class Home {
   constructor() {

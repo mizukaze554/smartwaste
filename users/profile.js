@@ -1,5 +1,5 @@
 // users/profile.js
-import { renderNavbar } from './nav.js';
+import { renderNavbar, bindNavEvents } from './nav.js';
 import { signOutUser } from '../auth/google.js';
 
 export class Profile {
