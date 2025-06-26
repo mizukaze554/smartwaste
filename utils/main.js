@@ -10,14 +10,3 @@ window.addEventListener('DOMContentLoaded', () => {
     loadRoute(route);
   }
 });
-
-// Optional: basic login logic
-const loginBtn = document.querySelectorAll('.login');
-if (loginBtn) {
-  loginBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    const path = '/users/dashboard';
-    setCookie('route', path, 7);
-    loadRoute(path);
-  });
-}
