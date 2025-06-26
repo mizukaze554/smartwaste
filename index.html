@@ -14,9 +14,19 @@
     }
   </style>
   
-  <!-- Routing and Cookie Logic -->
-  <script type="module" src="./utils/main.js"></script>
+  <script type="module">
+    import { setCookie, getCookie } from './cookie/main.js';
+    import { loadRoute } from './utils/routes.js';
 
+    window.addEventListener('DOMContentLoaded', () => {
+        const route = getCookie('route');
+
+        if (route) {
+            document.body.innerHTML = '';
+            loadRoute(route);
+        }
+    });
+  </script>
 </head>
 <body class="text-gray-800 bg-white">
 
@@ -119,5 +129,9 @@
       menu.classList.toggle('hidden');
     });
   </script>
+
+  <!-- Routing and Cookie Logic -->
+  <script type="module" src="./utils/main.js"></script>
+
 </body>
 </html>
