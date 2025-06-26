@@ -31,37 +31,58 @@ export function renderNavbar() {
 
 // After rendering, call this to bind nav events
 export function bindNavEvents() {
-  // Desktop nav links
-  document.getElementById('nav-home').addEventListener('click', e => {
-    e.preventDefault();
-    setCookie('route', '/users/dashboard', 7);
-    loadRoute('/users/dashboard');
-  });
+  const navHome = document.getElementById('nav-home');
+  const navProfile = document.getElementById('nav-profile');
+  const mobileNavHome = document.getElementById('mobile-nav-home');
+  const mobileNavProfile = document.getElementById('mobile-nav-profile');
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const logoutButtons = document.querySelectorAll('.logout');
 
-  document.getElementById('nav-profile').addEventListener('click', e => {
-    e.preventDefault();
-    setCookie('route', '/users/profile', 7);
-    loadRoute('/users/profile');
-  });
+  if (navHome) {
+    navHome.addEventListener('click', e => {
+      e.preventDefault();
+      setCookie('route', '/users/dashboard', 7);
+      loadRoute('/users/dashboard');
+    });
+  }
 
-  // Mobile nav links
-  document.getElementById('mobile-nav-home').addEventListener('click', e => {
-    e.preventDefault();
-    setCookie('route', '/users/dashboard', 7);
-    loadRoute('/users/dashboard');
-    // close mobile menu
-    document.getElementById('mobile-menu').classList.add('hidden');
-  });
+  if (navProfile) {
+    navProfile.addEventListener('click', e => {
+      e.preventDefault();
+      setCookie('route', '/users/profile', 7);
+      loadRoute('/users/profile');
+    });
+  }
 
-  document.getElementById('mobile-nav-profile').addEventListener('click', e => {
-    e.preventDefault();
-    setCookie('route', '/users/profile', 7);
-    loadRoute('/users/profile');
-    document.getElementById('mobile-menu').classList.add('hidden');
-  });
+  if (mobileNavHome) {
+    mobileNavHome.addEventListener('click', e => {
+      e.preventDefault();
+      setCookie('route', '/users/dashboard', 7);
+      loadRoute('/users/dashboard');
+      if (mobileMenu) mobileMenu.classList.add('hidden');
+    });
+  }
 
-  // Mobile menu toggle
-  document.getElementById('mobile-menu-button').addEventListener('click', () => {
-    document.getElementById('mobile-menu').classList.toggle('hidden');
+  if (mobileNavProfile) {
+    mobileNavProfile.addEventListener('click', e => {
+      e.preventDefault();
+      setCookie('route', '/users/profile', 7);
+      loadRoute('/users/profile');
+      if (mobileMenu) mobileMenu.classList.add('hidden');
+    });
+  }
+
+  if (mobileMenuButton) {
+    mobileMenuButton.addEventListener('click', () => {
+      if (mobileMenu) mobileMenu.classList.toggle('hidden');
+    });
+  }
+
+  logoutButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Your logout function here
+      // Example: signOutUser();
+    });
   });
 }
