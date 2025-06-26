@@ -32,26 +32,15 @@ export class Home {
         <section class="bg-white shadow-xl rounded-2xl p-8 space-y-8">
           <h2 class="text-3xl font-bold text-gray-900 text-center tracking-tight">Your Waste Card</h2>
 
-          <div class="grid grid-cols-1 gap-8">
-            <!-- Barcode full width, no human readable text -->
+          <div class="flex flex-col md:flex-row justify-center items-center gap-8 px-6">
             <img 
-              src="https://barcode.tec-it.com/barcode.ashx?data=SmartWasteUser&code=Code128&translate-esc=true&hidehrt=true" 
-              alt="Barcode" 
-              class="mx-auto h-36"
-              style="image-rendering: crisp-edges;"
+              src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=SmartWasteUser" 
+              alt="QR Code" 
+              class="w-40 h-40 rounded-lg shadow-md"
             />
-
-            <!-- QR code and points flex -->
-            <div class="flex justify-between items-center px-6">
-              <img 
-                src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=SmartWasteUser" 
-                alt="QR Code" 
-                class="w-36 h-36 rounded-lg shadow-md"
-              />
-              <div class="text-right">
-                <div class="text-xl font-semibold text-gray-900 mb-2">Total Points</div>
-                <div class="text-4xl font-extrabold text-green-600 tracking-wide">420 pts</div>
-              </div>
+            <div class="text-center md:text-left">
+              <div class="text-xl font-semibold text-gray-900 mb-2">Total Points</div>
+              <div class="text-5xl font-extrabold text-green-600 tracking-wide">420 pts</div>
             </div>
           </div>
         </section>
