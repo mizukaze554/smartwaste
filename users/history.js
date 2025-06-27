@@ -1,6 +1,4 @@
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
-import { app } from '../firebase/main.js';
 import { db } from '../firebase/db.js';
 
 export class History {
@@ -22,7 +20,6 @@ export class History {
           if (!entry.timestamp) return;
 
           const isReceived = !!entry.sender;
-
           if (isReceived && !entry.sender) return;
 
           unifiedLog.push({
@@ -40,22 +37,26 @@ export class History {
 
       unifiedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-      return unifiedLog.length === 0
-        ? `<p class="text-gray-500">No transactions yet.</p>`
-        : unifiedLog.map(entry => `
-            <div class="bg-white p-5 shadow-md rounded-xl border ${entry.cssBorder} flex items-center gap-6">
-              <i class="bi ${entry.icon} text-3xl ${entry.cssText}"></i>
-              <div class="flex-1 text-left">
-                <div class="text-lg font-semibold text-gray-800">${entry.directionText}: ${entry.party}</div>
-                <div class="text-sm text-gray-500 mt-1">${new Date(entry.timestamp).toLocaleString()}</div>
-              </div>
-              <div class="font-bold text-xl ${entry.cssText}">${entry.sign}${entry.points} pts</div>
+      if (unifiedLog.length === 0) {
+        return `<p class="text-gray-500 text-center text-base md:text-lg">No transactions yet.</p>`;
+      }
+
+      return unifiedLog.map(entry => `
+        <div class="bg-white p-4 sm:p-5 md:p-6 shadow-md rounded-2xl border ${entry.cssBorder} flex items-center gap-4 sm:gap-6">
+          <i class="bi ${entry.icon} text-2xl sm:text-3xl md:text-4xl ${entry.cssText} flex-shrink-0"></i>
+          <div class="flex-1 min-w-0">
+            <div class="text-base sm:text-lg md:text-xl font-semibold text-gray-800 truncate">
+              ${entry.directionText}: <span class="break-words">${entry.party}</span>
             </div>
-          `).join('');
+            <div class="text-xs sm:text-sm text-gray-500 mt-1">${new Date(entry.timestamp).toLocaleString()}</div>
+          </div>
+          <div class="text-sm sm:text-base md:text-lg font-bold ${entry.cssText} whitespace-nowrap">${entry.sign}${entry.points} pts</div>
+        </div>
+      `).join('');
 
     } catch (err) {
       console.error("[History] Error fetching:", err);
-      return `<p class="text-red-500 font-semibold">Failed to load transaction history.</p>`;
+      return `<p class="text-red-500 font-semibold text-center text-base md:text-lg">Failed to load transaction history.</p>`;
     }
   }
 }
