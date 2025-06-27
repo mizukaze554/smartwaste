@@ -27,15 +27,19 @@ export class History {
         const unifiedLog = [];
 
         const userRef = doc(db, 'history', userEmail);
-        console.log("Fetching user transaction log from Firestore:", userRef);
         const userSnap = await getDoc(userRef);
-        console.log("User transaction log:", userSnap.data());
+
         if (userSnap.exists()) {
           const log = userSnap.data().log || [];
 
           log.forEach(entry => {
-          console.log("User transaction log:", entry);
-            const isReceived = !!entry.sender; // FIXED: true if 'sender' exists
+            // Only include entries with a valid timestamp
+            if (!entry.timestamp) return;
+
+            const isReceived = !!entry.sender;
+
+            // Only show received logs if sender exists
+            if (isReceived && !entry.sender) return;
 
             unifiedLog.push({
               ...entry,
@@ -50,9 +54,10 @@ export class History {
           });
         }
 
+        // Sort by timestamp (newest first)
         unifiedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        // Render page
+        // Render UI
         document.body.innerHTML = `
           ${renderNavbar()}
           <main class="pt-36 px-6 max-w-4xl mx-auto space-y-16">
