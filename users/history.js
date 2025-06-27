@@ -26,19 +26,21 @@ export class History {
         return;
       }
 
-      try {
-        const userEmail = user.email.toLowerCase();
+      const userEmail = user.email.toLowerCase();
+      let sentLog = [];
+      let receivedLog = [];
 
-        // Fetch transactions where user is sender
+      try {
+        // Fetch user's sent transactions
         const sentRef = doc(db, 'history', userEmail);
         const sentSnap = await getDoc(sentRef);
-        const sentLog = sentSnap.exists() ? sentSnap.data().log || [] : [];
+        if (sentSnap.exists()) {
+          sentLog = sentSnap.data().log || [];
+        }
 
-        // Fetch transactions where user is receiver
+        // Fetch all histories to find received ones
         const historyCollection = collection(db, 'history');
         const allHistories = await getDocs(historyCollection);
-
-        const receivedLog = [];
 
         allHistories.forEach(docSnap => {
           const senderEmail = docSnap.id.toLowerCase();
@@ -53,7 +55,7 @@ export class History {
           });
         });
 
-        // Merge and enrich for rendering
+        // Merge & decorate logs
         const unifiedLog = [
           ...sentLog.map(entry => ({
             ...entry,
@@ -77,6 +79,7 @@ export class History {
           }))
         ];
 
+        // Sort by newest first
         unifiedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         // Render
@@ -110,10 +113,12 @@ export class History {
       } catch (error) {
         console.error("Error loading history:", error);
         document.body.innerHTML = `
+          ${renderNavbar()}
           <main class="pt-36 text-center">
             <p class="text-xl font-semibold text-red-500">Error loading history: ${error.message}</p>
           </main>
         `;
+        bindNavEvents();
       }
     });
   }
