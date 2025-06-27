@@ -5,13 +5,19 @@ import { db } from '../firebase/db.js';
 
 export class History {
   constructor() {
+    console.log("[History] Constructor called.");
     this.auth = getAuth(app);
     this.init();
   }
 
   async init() {
+    console.log("[History] Init called, waiting for auth state...");
+
     onAuthStateChanged(this.auth, async (user) => {
+      console.log("[Auth] State changed.");
+
       if (!user) {
+        console.warn("[Auth] No user is signed in.");
         document.body.innerHTML = `
           <main class="pt-36 text-center">
             <p class="text-xl font-semibold text-red-500">Please sign in to view your history.</p>
@@ -20,26 +26,39 @@ export class History {
         return;
       }
 
+      console.log("[Auth] User signed in:", user.email);
+
       const userEmail = user.email.toLowerCase();
+      const unifiedLog = [];
 
-        const unifiedLog = [];
-
+      try {
         const userRef = doc(db, 'history', userEmail);
+        console.log("[Firestore] Fetching document:", `history/${userEmail}`);
+
         const userSnap = await getDoc(userRef);
 
-        if (userSnap.exists()) {
+        if (!userSnap.exists()) {
+          console.warn("[Firestore] No history document found for user.");
+        } else {
           const log = userSnap.data().log || [];
+          console.log(`[Firestore] Loaded ${log.length} log entries.`);
 
-          log.forEach(entry => {
-            // Only include entries with a valid timestamp
-            if (!entry.timestamp) return;
+          log.forEach((entry, index) => {
+            console.log(`[Log Entry ${index}] Raw data:`, entry);
+
+            if (!entry.timestamp) {
+              console.warn(`[Log Entry ${index}] Skipped: Missing timestamp.`);
+              return;
+            }
 
             const isReceived = !!entry.sender;
 
-            // Only show received logs if sender exists
-            if (isReceived && !entry.sender) return;
+            if (isReceived && !entry.sender) {
+              console.warn(`[Log Entry ${index}] Skipped: Invalid received entry (missing sender).`);
+              return;
+            }
 
-            unifiedLog.push({
+            const logEntry = {
               ...entry,
               type: isReceived ? 'received' : 'sent',
               party: isReceived ? entry.sender : entry.receiver,
@@ -48,12 +67,15 @@ export class History {
               cssBorder: isReceived ? 'border-blue-200' : 'border-green-200',
               cssText: isReceived ? 'text-blue-600' : 'text-green-600',
               directionText: isReceived ? 'From' : 'To'
-            });
+            };
+
+            console.log(`[Log Entry ${index}] Final parsed entry:`, logEntry);
+            unifiedLog.push(logEntry);
           });
         }
 
-        // Sort by timestamp (newest first)
         unifiedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        console.log("[History] Sorted unified log:", unifiedLog);
 
         // Render UI
         document.body.innerHTML = `
@@ -80,8 +102,17 @@ export class History {
           </main>
         `;
 
+        console.log("[History] Render complete.");
 
-      
+      } catch (err) {
+        console.error("[Error] While loading transaction history:", err);
+
+        document.body.innerHTML = `
+          <main class="pt-36 text-center">
+            <p class="text-xl font-semibold text-red-500">Error loading history: ${err.message}</p>
+          </main>
+        `;
+      }
     });
   }
 }
