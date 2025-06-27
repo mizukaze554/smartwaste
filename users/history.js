@@ -2,8 +2,11 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-
 import { db } from '../firebase/db.js';
 
 export class History {
-  constructor(userEmail) {
+  constructor(userEmail, containerId) {
     this.userEmail = userEmail.toLowerCase();
+    this.containerId = containerId; // HTML container where history will render
+    this.intervalId = null;
+    this.lastTimestamp = null; // optional optimization to detect new data
   }
 
   async getHistoryHTML() {
@@ -16,7 +19,7 @@ export class History {
       if (userSnap.exists()) {
         const log = userSnap.data().log || [];
 
-        log.forEach((entry, index) => {
+        log.forEach(entry => {
           if (!entry.timestamp) return;
 
           const isReceived = !!entry.sender;
@@ -57,6 +60,36 @@ export class History {
     } catch (err) {
       console.error("[History] Error fetching:", err);
       return `<p class="text-red-500 font-semibold text-center text-base md:text-lg">Failed to load transaction history.</p>`;
+    }
+  }
+
+  async refreshHistory() {
+    const container = document.getElementById(this.containerId);
+    if (!container) {
+      console.warn(`[History] Container with id "${this.containerId}" not found.`);
+      return;
+    }
+
+    const html = await this.getHistoryHTML();
+    container.innerHTML = html;
+  }
+
+  startAutoRefresh(intervalMs = 3000) {
+    // Initial fetch immediately
+    this.refreshHistory();
+
+    // Clear any existing intervals first
+    if (this.intervalId) clearInterval(this.intervalId);
+
+    this.intervalId = setInterval(() => {
+      this.refreshHistory();
+    }, intervalMs);
+  }
+
+  stopAutoRefresh() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
     }
   }
 }
