@@ -14,11 +14,70 @@ export class AdminScanner {
     this.render();
   }
 
+  renderToastContainer() {
+    if (!document.getElementById('toast-container')) {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.style.position = 'fixed';
+      container.style.top = '1rem';
+      container.style.right = '1rem';
+      container.style.zIndex = '9999';
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.gap = '0.5rem';
+      document.body.appendChild(container);
+    }
+  }
+
+  showToast(message, type = 'info', duration = 3000) {
+    this.renderToastContainer();
+
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.padding = '12px 20px';
+    toast.style.borderRadius = '10px';
+    toast.style.color = 'white';
+    toast.style.fontWeight = '600';
+    toast.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+    toast.style.minWidth = '250px';
+    toast.style.maxWidth = '300px';
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s ease';
+
+    switch(type) {
+      case 'success':
+        toast.style.backgroundColor = '#22c55e'; // green-500
+        break;
+      case 'error':
+        toast.style.backgroundColor = '#ef4444'; // red-500
+        break;
+      case 'warning':
+        toast.style.backgroundColor = '#facc15'; // yellow-400
+        toast.style.color = '#000';
+        break;
+      default:
+        toast.style.backgroundColor = '#3b82f6'; // blue-500
+    }
+
+    document.getElementById('toast-container').appendChild(toast);
+
+    // Fade in
+    requestAnimationFrame(() => {
+      toast.style.opacity = '1';
+    });
+
+    // Remove after duration
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.addEventListener('transitionend', () => toast.remove());
+    }, duration);
+  }
+
   async render() {
     const input = prompt("Enter the number of points to give:");
     const points = Number(input);
     if (isNaN(points) || points <= 0) {
-      alert("Please enter a valid positive number of points.");
+      this.showToast("Please enter a valid positive number of points.", "error");
       window.history.back();
       return;
     }
@@ -53,6 +112,7 @@ export class AdminScanner {
     } catch (err) {
       status.textContent = "Camera access denied or not available.";
       console.error(err);
+      this.showToast("Camera access denied or not available.", "error");
       return;
     }
 
@@ -84,7 +144,7 @@ export class AdminScanner {
     const auth = getAuth();
     const sender = auth.currentUser;
     if (!sender) {
-      alert("You must be signed in.");
+      this.showToast("You must be signed in.", "error");
       return;
     }
 
@@ -92,7 +152,7 @@ export class AdminScanner {
     const receiverEmail = userEmail.trim().toLowerCase();
 
     if (senderEmail === receiverEmail) {
-      alert("You cannot send points to yourself.");
+      this.showToast("You cannot send points to yourself.", "warning");
       return;
     }
 
@@ -101,7 +161,6 @@ export class AdminScanner {
     const senderHistoryRef = doc(db, 'history', senderEmail);
     const receiverHistoryRef = doc(db, 'history', receiverEmail);
 
-    // Admin emails who can send without balance check
     const admins = ['linhtetln67@gmail.com', 'kingsoccer367@gmail.com'];
 
     try {
@@ -114,7 +173,6 @@ export class AdminScanner {
         const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
         const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
 
-        // Only check balance and deduct if sender is NOT admin
         if (!admins.includes(senderEmail)) {
           if (senderTotal < this.pointsToGive) {
             throw new Error(`Not enough points to send. You have ${senderTotal}, tried to send ${this.pointsToGive}.`);
@@ -122,40 +180,36 @@ export class AdminScanner {
           transaction.set(senderRef, { total: senderTotal - this.pointsToGive }, { merge: true });
         }
 
-        // Add points to receiver always
         transaction.set(receiverRef, { total: receiverTotal + this.pointsToGive }, { merge: true });
 
         const timestamp = new Date().toISOString();
 
-        // Update sender history
         const senderLog = senderHistoryDoc.exists() ? senderHistoryDoc.data().log || [] : [];
         senderLog.push({ receiver: receiverEmail, points: this.pointsToGive, timestamp, type: "sent" });
         transaction.set(senderHistoryRef, { log: senderLog }, { merge: true });
 
-        // Update receiver history
         const receiverLog = receiverHistoryDoc.exists() ? receiverHistoryDoc.data().log || [] : [];
         receiverLog.push({ sender: senderEmail, points: this.pointsToGive, timestamp, type: "received" });
         transaction.set(receiverHistoryRef, { log: receiverLog }, { merge: true });
       });
 
-      // Play success sound from an online source
+      // Play success sound
       const successAudio = new Audio('https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg');
       successAudio.play();
 
-      alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
+      this.showToast(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`, 'success');
 
       successAudio.addEventListener('ended', () => {
         location.reload();
       });
 
-      // Fallback reload after 2 seconds if audio doesn't fire ended event
       setTimeout(() => {
         location.reload();
-      }, 2000);
+      }, 4000);
 
     } catch (error) {
       console.error("Transaction failed:", error);
-      alert("Error sending points: " + error.message);
+      this.showToast("Error sending points: " + error.message, 'error');
     }
   }
 }
