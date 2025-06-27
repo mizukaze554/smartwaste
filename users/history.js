@@ -101,9 +101,8 @@ export class History {
           </main>
         `;
 
-        requestAnimationFrame(() => {
-          bindNavEvents();
-        });
+        bindNavEvents();
+
       } catch (error) {
         console.error("Error loading history:", error);
         document.body.innerHTML = `

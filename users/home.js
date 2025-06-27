@@ -153,11 +153,8 @@ export class Home {
         </main>
       `;
 
-      requestAnimationFrame(() => {
-        bindNavEvents();
-        this.bindEvents();
-      });
-
+      bindNavEvents();
+      this.bindEvents();
     });
   }
 
