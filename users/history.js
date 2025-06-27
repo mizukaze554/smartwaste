@@ -27,8 +27,9 @@ export class History {
         const unifiedLog = [];
 
         const userRef = doc(db, 'history', userEmail);
+        console.log("Fetching user transaction log from Firestore:", userRef);
         const userSnap = await getDoc(userRef);
-
+        console.log("User transaction log:", userSnap.data());
         if (userSnap.exists()) {
           const log = userSnap.data().log || [];
 
