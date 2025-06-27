@@ -1,9 +1,7 @@
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 import {
   doc,
-  collection,
-  getDoc,
-  getDocs
+  getDoc
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { app } from '../firebase/main.js';
 import { db } from '../firebase/db.js';
@@ -27,59 +25,45 @@ export class History {
       }
 
       const userEmail = user.email.toLowerCase();
-      let sentLog = [];
-      let receivedLog = [];
+      let unifiedLog = [];
 
       try {
-        // Fetch user's sent transactions
-        const sentRef = doc(db, 'history', userEmail);
-        const sentSnap = await getDoc(sentRef);
-        if (sentSnap.exists()) {
-          sentLog = sentSnap.data().log || [];
-        }
+        const historyRef = doc(db, 'history', userEmail);
+        const historySnap = await getDoc(historyRef);
 
-        // Fetch all histories to find received ones
-        const historyCollection = collection(db, 'history');
-        const allHistories = await getDocs(historyCollection);
+        if (historySnap.exists()) {
+          const rawLog = historySnap.data().log || [];
 
-        allHistories.forEach(docSnap => {
-          const senderEmail = docSnap.id.toLowerCase();
-          const log = docSnap.data().log || [];
-          log.forEach(entry => {
+          rawLog.forEach(entry => {
             if (entry.receiver?.toLowerCase() === userEmail) {
-              receivedLog.push({
+              // User received points
+              unifiedLog.push({
                 ...entry,
-                sender: senderEmail
+                type: 'received',
+                party: entry.sender,
+                icon: 'bi-person',
+                sign: '+',
+                cssBorder: 'border-blue-200',
+                cssText: 'text-blue-600',
+                directionText: 'From'
+              });
+            } else if (entry.sender?.toLowerCase() === userEmail) {
+              // User sent points
+              unifiedLog.push({
+                ...entry,
+                type: 'sent',
+                party: entry.receiver,
+                icon: 'bi-shop',
+                sign: '-',
+                cssBorder: 'border-green-200',
+                cssText: 'text-green-600',
+                directionText: 'To'
               });
             }
           });
-        });
+        }
 
-        // Merge & decorate logs
-        const unifiedLog = [
-          ...sentLog.map(entry => ({
-            ...entry,
-            type: 'sent',
-            party: entry.receiver,
-            icon: 'bi-shop',
-            sign: '-',
-            cssBorder: 'border-green-200',
-            cssText: 'text-green-600',
-            directionText: 'To'
-          })),
-          ...receivedLog.map(entry => ({
-            ...entry,
-            type: 'received',
-            party: entry.sender,
-            icon: 'bi-person',
-            sign: '+',
-            cssBorder: 'border-blue-200',
-            cssText: 'text-blue-600',
-            directionText: 'From'
-          }))
-        ];
-
-        // Sort by newest first
+        // Sort by most recent first
         unifiedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         // Render
@@ -108,9 +92,7 @@ export class History {
           </main>
         `;
 
-        (async () => {
-          bindNavEvents();
-        })();
+        bindNavEvents();
 
       } catch (error) {
         console.error("Error loading history:", error);
