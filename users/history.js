@@ -35,7 +35,7 @@ export class History {
           const rawLog = historySnap.data().log || [];
 
           rawLog.forEach(entry => {
-            if (entry.receiver?.toLowerCase() === userEmail) {
+            if (entry.sender?.toLowerCase() === userEmail) {
               // User received points
               unifiedLog.push({
                 ...entry,
@@ -47,7 +47,7 @@ export class History {
                 cssText: 'text-blue-600',
                 directionText: 'From'
               });
-            } else if (entry.sender?.toLowerCase() === userEmail) {
+            } else if (entry.receiver?.toLowerCase() === userEmail) {
               // User sent points
               unifiedLog.push({
                 ...entry,
