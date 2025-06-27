@@ -29,12 +29,12 @@ export class History {
       try {
         const userEmail = user.email.toLowerCase();
 
-        // 读取当前用户作为发送者的交易历史
+        // Fetch transactions where user is sender
         const sentRef = doc(db, 'history', userEmail);
         const sentSnap = await getDoc(sentRef);
         const sentLog = sentSnap.exists() ? sentSnap.data().log || [] : [];
 
-        // 遍历所有发送者文档，找出接收者为当前用户的交易
+        // Fetch transactions where user is receiver
         const historyCollection = collection(db, 'history');
         const allHistories = await getDocs(historyCollection);
 
@@ -53,12 +53,13 @@ export class History {
           });
         });
 
-        // 合并发送和接收日志，方便统一渲染
+        // Merge and enrich for rendering
         const unifiedLog = [
           ...sentLog.map(entry => ({
             ...entry,
             type: 'sent',
             party: entry.receiver,
+            icon: 'bi-shop',
             sign: '-',
             cssBorder: 'border-green-200',
             cssText: 'text-green-600',
@@ -68,6 +69,7 @@ export class History {
             ...entry,
             type: 'received',
             party: entry.sender,
+            icon: 'bi-person',
             sign: '+',
             cssBorder: 'border-blue-200',
             cssText: 'text-blue-600',
@@ -75,10 +77,9 @@ export class History {
           }))
         ];
 
-        // 按时间倒序排列
         unifiedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        // 渲染页面
+        // Render
         document.body.innerHTML = `
           ${renderNavbar()}
           <main class="pt-36 px-6 max-w-4xl mx-auto space-y-16">
@@ -89,10 +90,13 @@ export class History {
                   unifiedLog.length === 0
                     ? `<p class="text-gray-500">No transactions yet.</p>`
                     : unifiedLog.map(entry => `
-                      <div class="bg-white p-5 shadow-md rounded-xl border ${entry.cssBorder}">
-                        <div class="text-lg font-semibold text-gray-800">${entry.directionText}: ${entry.party}</div>
-                        <div class="${entry.cssText} font-bold text-xl">${entry.sign} ${entry.points} pts</div>
-                        <div class="text-sm text-gray-500 mt-1">${new Date(entry.timestamp).toLocaleString()}</div>
+                      <div class="bg-white p-5 shadow-md rounded-xl border ${entry.cssBorder} flex items-center gap-6">
+                        <i class="bi ${entry.icon} text-3xl ${entry.cssText}"></i>
+                        <div class="flex-1 text-left">
+                          <div class="text-lg font-semibold text-gray-800">${entry.directionText}: ${entry.party}</div>
+                          <div class="text-sm text-gray-500 mt-1">${new Date(entry.timestamp).toLocaleString()}</div>
+                        </div>
+                        <div class="font-bold text-xl ${entry.cssText}">${entry.sign}${entry.points} pts</div>
                       </div>
                     `).join('')
                 }

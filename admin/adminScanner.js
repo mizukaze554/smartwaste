@@ -1,5 +1,4 @@
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-import { isAdmin } from '../middleware/admin.js';
 import { db } from '../firebase/db.js';
 import {
   doc,
@@ -9,7 +8,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { renderNavbar, bindNavEvents } from '../users/nav.js';
 
-// Make sure you have jsQR loaded globally in your HTML for QR decoding
+// Make sure you have jsQR loaded globally in your HTML
 
 export class AdminScanner {
   constructor() {
@@ -47,10 +46,8 @@ export class AdminScanner {
     const status = document.getElementById('status');
     const video = document.getElementById('scanner');
 
-    if (!(await isAdmin())) {
-      status.textContent = "Access denied. Admins only.";
-      return;
-    }
+    // ✅ No admin check anymore
+    status.textContent = "Point scanner ready. Hold a QR code in front of the camera.";
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
@@ -73,19 +70,12 @@ export class AdminScanner {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 
-        // Decode QR code with jsQR (make sure jsQR is included in your project)
         const code = jsQR(imageData.data, canvas.width, canvas.height);
         if (code) {
           status.textContent = `QR Code detected: ${code.data}`;
-          // Stop video stream after scan
-          video.srcObject.getTracks().forEach(track => track.stop());
-
-          // Award points
+          video.srcObject.getTracks().forEach(track => track.stop()); // Stop camera
           await this.awardPointsToUser(code.data);
-
-          // Optionally reload page or close scanner
-          // window.location.reload();
-          return; // stop scanning after one detection
+          return;
         }
       }
       requestAnimationFrame(detectQR);
@@ -95,79 +85,73 @@ export class AdminScanner {
   }
 
   async awardPointsToUser(userEmail) {
-  const auth = getAuth();
-  const admin = auth.currentUser;
-  if (!admin) {
-    alert("Admin not authenticated.");
-    return;
-  }
+    const auth = getAuth();
+    const sender = auth.currentUser;
+    if (!sender) {
+      alert("You must be signed in.");
+      return;
+    }
 
-  const senderEmail = admin.email.toLowerCase();
-  const receiverEmail = userEmail.trim().toLowerCase();
+    const senderEmail = sender.email.toLowerCase();
+    const receiverEmail = userEmail.trim().toLowerCase();
 
-  if (senderEmail === receiverEmail) {
-    alert("Cannot send points to yourself.");
-    return;
-  }
+    if (senderEmail === receiverEmail) {
+      alert("You cannot send points to yourself.");
+      return;
+    }
 
-  const senderRef = doc(db, 'users', senderEmail);
-  const receiverRef = doc(db, 'users', receiverEmail);
-  const senderHistoryRef = doc(db, 'history', senderEmail);
-  const receiverHistoryRef = doc(db, 'history', receiverEmail);
+    const senderRef = doc(db, 'users', senderEmail);
+    const receiverRef = doc(db, 'users', receiverEmail);
+    const senderHistoryRef = doc(db, 'history', senderEmail);
+    const receiverHistoryRef = doc(db, 'history', receiverEmail);
 
-  const senderIsAdmin = await isAdmin();
+    try {
+      await runTransaction(db, async (transaction) => {
+        const senderDoc = await transaction.get(senderRef);
+        const receiverDoc = await transaction.get(receiverRef);
+        const senderHistoryDoc = await transaction.get(senderHistoryRef);
+        const receiverHistoryDoc = await transaction.get(receiverHistoryRef);
 
-  try {
-    await runTransaction(db, async (transaction) => {
-      const senderDoc = await transaction.get(senderRef);
-      const receiverDoc = await transaction.get(receiverRef);
-      const senderHistoryDoc = await transaction.get(senderHistoryRef);
-      const receiverHistoryDoc = await transaction.get(receiverHistoryRef);
+        const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
+        const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
 
-      const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
-      const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
+        if (senderTotal < this.pointsToGive) {
+          throw new Error(`Not enough points to send. You have ${senderTotal}, tried to send ${this.pointsToGive}.`);
+        }
 
-      if (!senderIsAdmin && senderTotal < this.pointsToGive) {
-        throw new Error(`Not enough points to send. You have ${senderTotal}, tried to send ${this.pointsToGive}.`);
-      }
-
-      // Update sender balance
-      if (!senderIsAdmin) {
+        // Deduct from sender
         transaction.set(senderRef, { total: senderTotal - this.pointsToGive }, { merge: true });
-      }
 
-      // Update receiver balance
-      transaction.set(receiverRef, { total: receiverTotal + this.pointsToGive }, { merge: true });
+        // Add to receiver
+        transaction.set(receiverRef, { total: receiverTotal + this.pointsToGive }, { merge: true });
 
-      const timestamp = new Date().toISOString();
+        const timestamp = new Date().toISOString();
 
-      // Update sender's history (as "sent")
-      const senderLog = senderHistoryDoc.exists() ? senderHistoryDoc.data().log || [] : [];
-      senderLog.push({
-        receiver: receiverEmail,
-        points: this.pointsToGive,
-        timestamp: timestamp,
-        type: "sent"
+        // Update sender history
+        const senderLog = senderHistoryDoc.exists() ? senderHistoryDoc.data().log || [] : [];
+        senderLog.push({
+          receiver: receiverEmail,
+          points: this.pointsToGive,
+          timestamp,
+          type: "sent"
+        });
+        transaction.set(senderHistoryRef, { log: senderLog }, { merge: true });
+
+        // Update receiver history
+        const receiverLog = receiverHistoryDoc.exists() ? receiverHistoryDoc.data().log || [] : [];
+        receiverLog.push({
+          sender: senderEmail,
+          points: this.pointsToGive,
+          timestamp,
+          type: "received"
+        });
+        transaction.set(receiverHistoryRef, { log: receiverLog }, { merge: true });
       });
-      transaction.set(senderHistoryRef, { log: senderLog }, { merge: true });
 
-      // Update receiver's history (as "received")
-      const receiverLog = receiverHistoryDoc.exists() ? receiverHistoryDoc.data().log || [] : [];
-      receiverLog.push({
-        sender: senderEmail,
-        points: this.pointsToGive,
-        timestamp: timestamp,
-        type: "received"
-      });
-      transaction.set(receiverHistoryRef, { log: receiverLog }, { merge: true });
-    });
-
-    alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
-  } catch (error) {
-    console.error("Transaction failed:", error);
-    alert("Error sending points: " + error.message);
+      alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      alert("Error sending points: " + error.message);
+    }
   }
-}
-
-
 }
