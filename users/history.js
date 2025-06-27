@@ -2,7 +2,6 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { app } from '../firebase/main.js';
 import { db } from '../firebase/db.js';
-import { renderNavbar, bindNavEvents } from './nav.js';
 
 export class History {
   constructor() {
@@ -23,7 +22,6 @@ export class History {
 
       const userEmail = user.email.toLowerCase();
 
-      try {
         const unifiedLog = [];
 
         const userRef = doc(db, 'history', userEmail);
@@ -59,7 +57,6 @@ export class History {
 
         // Render UI
         document.body.innerHTML = `
-          ${renderNavbar()}
           <main class="pt-36 px-6 max-w-4xl mx-auto space-y-16">
             <section>
               <h2 class="text-3xl font-extrabold text-gray-900 mb-6">Full Transaction History</h2>
@@ -83,18 +80,8 @@ export class History {
           </main>
         `;
 
-        bindNavEvents();
 
-      } catch (error) {
-        console.error("Error loading history:", error);
-        document.body.innerHTML = `
-          ${renderNavbar()}
-          <main class="pt-36 text-center">
-            <p class="text-xl font-semibold text-red-500">Error loading history: ${error.message}</p>
-          </main>
-        `;
-        bindNavEvents();
-      }
+      
     });
   }
 }
