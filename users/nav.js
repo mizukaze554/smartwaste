@@ -1,5 +1,6 @@
 import { loadRoute } from '../utils/routes.js';
 import { setCookie } from '../cookie/main.js';
+import { signOutUser } from '../auth/google.js';
 
 export function renderNavbar() {
   return `
@@ -44,8 +45,7 @@ export function bindNavEvents() {
 
   logoutButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-      // Your logout function here
-      // Example: signOutUser();
+      signOutUser();
     });
   });
 }
