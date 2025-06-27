@@ -33,9 +33,9 @@ export class History {
 
         if (userSnap.exists()) {
           const log = userSnap.data().log || [];
-
+          console.log("User transaction log:", log);
           log.forEach(entry => {
-            const isReceived = !!entry.sender;
+            const isReceived = !entry.sender;
 
             unifiedLog.push({
               ...entry,
