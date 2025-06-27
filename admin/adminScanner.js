@@ -132,7 +132,7 @@ export class AdminScanner {
       });
 
       // ✅ Success feedback
-      const successAudio = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_b4b1074f03.mp3?filename=success-fanfare-trumpets-6185.mp3');
+      const successAudio = new Audio('/public/success.mp3');
       successAudio.play();
 
       alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
