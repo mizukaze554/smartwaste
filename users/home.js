@@ -34,13 +34,13 @@ export class Home {
         totalPoints = userDoc.exists() ? userDoc.data().total || 0 : 0;
       }
 
-      // Create History instance with container id
-      const history = new History(userEmail, 'history-container');
+      // ✅ Load transaction history using History class
+      const history = new History(userEmail);
       const historyHTML = await history.getHistoryHTML();
 
       document.body.innerHTML = `
         <style>
-          /* Flip card styles */
+          /* Flip card styles (same as before) */
           .flip-card {
             perspective: 1000px;
             width: 160px;
@@ -131,18 +131,13 @@ export class Home {
 
           <section class="space-y-12">
             <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight select-none">Collection History</h2>
-            <div id="history-container">
-              ${historyHTML}
-            </div>
+            ${historyHTML}
           </section>
         </main>
       `;
 
       bindNavEvents();
       this.bindEvents();
-
-      // Start auto-refreshing history every 3 seconds
-      history.startAutoRefresh(3000);
     });
   }
 
