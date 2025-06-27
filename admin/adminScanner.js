@@ -2,8 +2,6 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth
 import { db } from '../firebase/db.js';
 import {
   doc,
-  getDoc,
-  setDoc,
   runTransaction,
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import { renderNavbar, bindNavEvents } from '../users/nav.js';
@@ -103,6 +101,9 @@ export class AdminScanner {
     const senderHistoryRef = doc(db, 'history', senderEmail);
     const receiverHistoryRef = doc(db, 'history', receiverEmail);
 
+    // Admin emails who can send without balance check
+    const admins = ['linhtetln67@gmail.com', 'kingsoccer367@gmail.com'];
+
     try {
       await runTransaction(db, async (transaction) => {
         const senderDoc = await transaction.get(senderRef);
@@ -113,26 +114,32 @@ export class AdminScanner {
         const senderTotal = senderDoc.exists() ? senderDoc.data().total || 0 : 0;
         const receiverTotal = receiverDoc.exists() ? receiverDoc.data().total || 0 : 0;
 
-        if (senderTotal < this.pointsToGive) {
-          throw new Error(`Not enough points to send. You have ${senderTotal}, tried to send ${this.pointsToGive}.`);
+        // Only check balance and deduct if sender is NOT admin
+        if (!admins.includes(senderEmail)) {
+          if (senderTotal < this.pointsToGive) {
+            throw new Error(`Not enough points to send. You have ${senderTotal}, tried to send ${this.pointsToGive}.`);
+          }
+          transaction.set(senderRef, { total: senderTotal - this.pointsToGive }, { merge: true });
         }
 
-        transaction.set(senderRef, { total: senderTotal - this.pointsToGive }, { merge: true });
+        // Add points to receiver always
         transaction.set(receiverRef, { total: receiverTotal + this.pointsToGive }, { merge: true });
 
         const timestamp = new Date().toISOString();
 
+        // Update sender history
         const senderLog = senderHistoryDoc.exists() ? senderHistoryDoc.data().log || [] : [];
         senderLog.push({ receiver: receiverEmail, points: this.pointsToGive, timestamp, type: "sent" });
         transaction.set(senderHistoryRef, { log: senderLog }, { merge: true });
 
+        // Update receiver history
         const receiverLog = receiverHistoryDoc.exists() ? receiverHistoryDoc.data().log || [] : [];
         receiverLog.push({ sender: senderEmail, points: this.pointsToGive, timestamp, type: "received" });
         transaction.set(receiverHistoryRef, { log: receiverLog }, { merge: true });
       });
 
-      // ✅ Success feedback
-      const successAudio = new Audio('/public/success.mp3');
+      // Play success sound from an online source
+      const successAudio = new Audio('https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg');
       successAudio.play();
 
       alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
@@ -141,9 +148,10 @@ export class AdminScanner {
         location.reload();
       });
 
+      // Fallback reload after 2 seconds if audio doesn't fire ended event
       setTimeout(() => {
         location.reload();
-      }, 3000); // fallback if audio fails
+      }, 2000);
 
     } catch (error) {
       console.error("Transaction failed:", error);
