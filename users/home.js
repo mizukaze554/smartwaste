@@ -6,6 +6,7 @@ import { signOutUser } from '../auth/google.js';
 import { renderNavbar, bindNavEvents } from './nav.js';
 import { isAdmin } from '../middleware/admin.js';
 import { AdminScanner } from '../admin/adminScanner.js';
+import { History } from './history.js'; // ✅ Import History class
 
 export class Home {
   constructor() {
@@ -33,31 +34,13 @@ export class Home {
         totalPoints = userDoc.exists() ? userDoc.data().total || 0 : 0;
       }
 
-      // Get user's transaction history
-      let historyHTML = '<p class="text-gray-500">No transactions yet.</p>';
-      try {
-        const historyRef = doc(db, 'history', userEmail); // ✅ FIXED here
-        const historySnap = await getDoc(historyRef);
-        const historyData = historySnap.exists() ? historySnap.data().log || [] : [];
-
-        if (historyData.length > 0) {
-          historyHTML = historyData.reverse().map(entry => `
-            <div class="flex items-start gap-6 p-6 rounded-2xl shadow-lg bg-white hover:shadow-2xl transition">
-              <i class="bi bi-shop text-5xl text-green-600 flex-shrink-0"></i>
-              <div class="grid grid-cols-1 w-full gap-1">
-                <div class="text-xl font-semibold text-gray-900">To: ${entry.receiver}</div>
-                <div class="text-base text-gray-600 leading-relaxed">Sent points to user</div>
-              </div>
-              <div class="ml-auto font-extrabold text-green-600 text-lg">-${entry.points} pts</div>
-            </div>
-          `).join('');
-        }
-      } catch (error) {
-        console.error('Error loading history:', error);
-      }
+      // ✅ Load transaction history using History class
+      const history = new History(userEmail);
+      const historyHTML = await history.getHistoryHTML();
 
       document.body.innerHTML = `
         <style>
+          /* Flip card styles (same as before) */
           .flip-card {
             perspective: 1000px;
             width: 160px;
@@ -113,7 +96,7 @@ export class Home {
           }
         </style>
 
-        ${renderNavbar()} 
+        ${renderNavbar()}
 
         <main class="pt-36 px-6 max-w-4xl mx-auto space-y-24">
           <section class="bg-white shadow-2xl rounded-3xl p-10 space-y-10">
@@ -153,10 +136,7 @@ export class Home {
         </main>
       `;
 
-      (async () => {
-        bindNavEvents();
-      })();
-
+      bindNavEvents();
       this.bindEvents();
     });
   }
