@@ -50,9 +50,10 @@ export class Profile {
         </section>
       </main>
     `;
-
-    bindNavEvents();
-    this.bindEvents();
+    requestAnimationFrame(() => {
+      this.bindEvents();
+      bindNavEvents();
+    });
   }
 
   bindEvents() {
