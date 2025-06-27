@@ -10,6 +10,9 @@ export class Profile {
     const savedName = localStorage.getItem('userName') || '';
     const savedPic = localStorage.getItem('userPic') || '';
 
+    // Use /public/logo.png if no saved pic
+    const profilePicSrc = savedPic || '/public/logo.png';
+
     document.body.innerHTML = `
       ${renderNavbar()}
 
@@ -22,7 +25,7 @@ export class Profile {
             <div class="flex justify-center">
               <label for="profile-pic-upload" class="cursor-pointer group relative">
                 <img id="profile-preview" 
-                     src="${savedPic || 'https://via.placeholder.com/160'}" 
+                     src="${profilePicSrc}" 
                      alt="Profile Picture" 
                      class="rounded-full w-40 h-40 object-cover border-4 border-green-600 shadow-lg transition-transform group-hover:scale-105" />
                 <div class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white font-semibold">
@@ -61,7 +64,7 @@ export class Profile {
   bindEvents() {
     const form = document.getElementById('profile-form');
     const nameInput = form.querySelector('#name');
-    const urlInput = form.querySelector('#profile-pic-url');
+    // Removed reference to profile-pic-url as it's not in your form
     const fileInput = form.querySelector('#profile-pic-upload');
     const previewImg = document.getElementById('profile-preview');
 
@@ -74,33 +77,21 @@ export class Profile {
       reader.onload = (e) => {
         const base64 = e.target.result;
         previewImg.src = base64;
-        urlInput.value = ''; // clear url input
       };
       reader.readAsDataURL(file);
-    });
-
-    // URL input updates preview
-    urlInput.addEventListener('input', () => {
-      const url = urlInput.value.trim();
-      if (url) {
-        previewImg.src = url;
-        fileInput.value = ''; // clear file input
-      } else {
-        previewImg.src = 'https://via.placeholder.com/160';
-      }
     });
 
     // Form submit
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const name = nameInput.value.trim();
-      const picUrl = urlInput.value.trim();
       const isBase64 = previewImg.src.startsWith('data:');
+      const picSrc = previewImg.src === window.location.origin + '/public/logo.png' ? '' : previewImg.src;
 
       if (!name) return alert('Please enter your name.');
 
       localStorage.setItem('userName', name);
-      localStorage.setItem('userPic', isBase64 ? previewImg.src : picUrl || previewImg.src);
+      localStorage.setItem('userPic', isBase64 ? previewImg.src : picSrc);
 
       alert('Profile updated!');
     });
@@ -110,7 +101,7 @@ export class Profile {
       btn.addEventListener('click', signOutUser)
     );
 
-    // Mobile menu
+    // Mobile menu toggle
     document.getElementById('mobile-menu-button')?.addEventListener('click', () => {
       document.getElementById('mobile-menu')?.classList.toggle('hidden');
     });

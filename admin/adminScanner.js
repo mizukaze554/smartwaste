@@ -17,7 +17,6 @@ export class AdminScanner {
   }
 
   async render() {
-    // Ask how many points to give BEFORE camera starts
     const input = prompt("Enter the number of points to give:");
     const points = Number(input);
     if (isNaN(points) || points <= 0) {
@@ -46,13 +45,12 @@ export class AdminScanner {
     const status = document.getElementById('status');
     const video = document.getElementById('scanner');
 
-    // ✅ No admin check anymore
     status.textContent = "Point scanner ready. Hold a QR code in front of the camera.";
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       video.srcObject = stream;
-      video.setAttribute("playsinline", true); // iOS fix
+      video.setAttribute("playsinline", true);
       video.play();
     } catch (err) {
       status.textContent = "Camera access denied or not available.";
@@ -73,7 +71,7 @@ export class AdminScanner {
         const code = jsQR(imageData.data, canvas.width, canvas.height);
         if (code) {
           status.textContent = `QR Code detected: ${code.data}`;
-          video.srcObject.getTracks().forEach(track => track.stop()); // Stop camera
+          video.srcObject.getTracks().forEach(track => track.stop());
           await this.awardPointsToUser(code.data);
           return;
         }
@@ -119,36 +117,34 @@ export class AdminScanner {
           throw new Error(`Not enough points to send. You have ${senderTotal}, tried to send ${this.pointsToGive}.`);
         }
 
-        // Deduct from sender
         transaction.set(senderRef, { total: senderTotal - this.pointsToGive }, { merge: true });
-
-        // Add to receiver
         transaction.set(receiverRef, { total: receiverTotal + this.pointsToGive }, { merge: true });
 
         const timestamp = new Date().toISOString();
 
-        // Update sender history
         const senderLog = senderHistoryDoc.exists() ? senderHistoryDoc.data().log || [] : [];
-        senderLog.push({
-          receiver: receiverEmail,
-          points: this.pointsToGive,
-          timestamp,
-          type: "sent"
-        });
+        senderLog.push({ receiver: receiverEmail, points: this.pointsToGive, timestamp, type: "sent" });
         transaction.set(senderHistoryRef, { log: senderLog }, { merge: true });
 
-        // Update receiver history
         const receiverLog = receiverHistoryDoc.exists() ? receiverHistoryDoc.data().log || [] : [];
-        receiverLog.push({
-          sender: senderEmail,
-          points: this.pointsToGive,
-          timestamp,
-          type: "received"
-        });
+        receiverLog.push({ sender: senderEmail, points: this.pointsToGive, timestamp, type: "received" });
         transaction.set(receiverHistoryRef, { log: receiverLog }, { merge: true });
       });
 
+      // ✅ Success feedback
+      const successAudio = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_b4b1074f03.mp3?filename=success-fanfare-trumpets-6185.mp3');
+      successAudio.play();
+
       alert(`✅ Sent ${this.pointsToGive} pts to ${receiverEmail}`);
+
+      successAudio.addEventListener('ended', () => {
+        location.reload();
+      });
+
+      setTimeout(() => {
+        location.reload();
+      }, 3000); // fallback if audio fails
+
     } catch (error) {
       console.error("Transaction failed:", error);
       alert("Error sending points: " + error.message);
