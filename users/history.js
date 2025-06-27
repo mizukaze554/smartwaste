@@ -25,48 +25,36 @@ export class History {
       }
 
       const userEmail = user.email.toLowerCase();
-      let unifiedLog = [];
 
       try {
-        const historyRef = doc(db, 'history', userEmail);
-        const historySnap = await getDoc(historyRef);
+        const unifiedLog = [];
 
-        if (historySnap.exists()) {
-          const rawLog = historySnap.data().log || [];
+        const userRef = doc(db, 'history', userEmail);
+        const userSnap = await getDoc(userRef);
 
-          rawLog.forEach(entry => {
-            if (entry.sender?.toLowerCase() === userEmail) {
-              // User received points
-              unifiedLog.push({
-                ...entry,
-                type: 'received',
-                party: entry.sender,
-                icon: 'bi-person',
-                sign: '+',
-                cssBorder: 'border-blue-200',
-                cssText: 'text-blue-600',
-                directionText: 'From'
-              });
-            } else if (entry.receiver?.toLowerCase() === userEmail) {
-              // User sent points
-              unifiedLog.push({
-                ...entry,
-                type: 'sent',
-                party: entry.receiver,
-                icon: 'bi-shop',
-                sign: '-',
-                cssBorder: 'border-green-200',
-                cssText: 'text-green-600',
-                directionText: 'To'
-              });
-            }
+        if (userSnap.exists()) {
+          const log = userSnap.data().log || [];
+
+          log.forEach(entry => {
+            const isReceived = !!entry.sender;
+
+            unifiedLog.push({
+              ...entry,
+              type: isReceived ? 'received' : 'sent',
+              party: isReceived ? entry.sender : entry.receiver,
+              icon: isReceived ? 'bi-person' : 'bi-shop',
+              sign: isReceived ? '+' : '-',
+              cssBorder: isReceived ? 'border-blue-200' : 'border-green-200',
+              cssText: isReceived ? 'text-blue-600' : 'text-green-600',
+              directionText: isReceived ? 'From' : 'To'
+            });
           });
         }
 
-        // Sort by most recent first
+        // Sort newest first
         unifiedLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        // Render
+        // Render UI
         document.body.innerHTML = `
           ${renderNavbar()}
           <main class="pt-36 px-6 max-w-4xl mx-auto space-y-16">
