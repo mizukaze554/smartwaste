@@ -16,11 +16,11 @@ export function renderNavbar() {
         <div class="hidden md:flex space-x-6 items-center">
           <a href="#" id="nav-home" class="hover:underline text-gray-700 font-semibold transition">Home</a>
           <a href="#" id="nav-profile" class="hover:underline text-gray-700 font-semibold transition">Profile</a>
-          <button class="logout bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 transition font-semibold shadow-sm">Logout</button>
+          <button class="logout bg-red-600 text-white px-5 py-2 rounded-lg hover:bg-red-700 transition font-semibold shadow-sm cursor-pointer">Logout</button>
         </div>
 
         <!-- Mobile menu button -->
-        <button id="mobile-menu-button" class="md:hidden focus:outline-none focus:ring-2 focus:ring-green-600 rounded p-2" aria-label="Toggle navigation">
+        <button id="mobile-menu-button" class="md:hidden focus:outline-none focus:ring-2 focus:ring-green-600 rounded p-2 cursor-pointer" aria-label="Toggle navigation">
           <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 6h16M4 12h16M4 18h16"/>
           </svg>

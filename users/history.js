@@ -108,7 +108,9 @@ export class History {
           </main>
         `;
 
-        bindNavEvents();
+        (async () => {
+          bindNavEvents();
+        })();
 
       } catch (error) {
         console.error("Error loading history:", error);

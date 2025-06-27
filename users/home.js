@@ -153,7 +153,10 @@ export class Home {
         </main>
       `;
 
-      bindNavEvents();
+      (async () => {
+        bindNavEvents();
+      })();
+
       this.bindEvents();
     });
   }

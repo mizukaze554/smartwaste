@@ -51,7 +51,10 @@ export class Profile {
       </main>
     `;
 
-    bindNavEvents();
+    (async () => {
+      bindNavEvents();
+    })();
+
     this.bindEvents();
   }
 
