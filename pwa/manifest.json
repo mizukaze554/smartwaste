@@ -4,8 +4,9 @@
   "description": "Waste collection and reward platform aligned with SDG 11",
   "start_url": "/users/home",
   "display": "standalone",
-  "theme_color": "#16a34a",
   "orientation": "portrait-primary",
+  "theme_color": "#16a34a",
+  "background_color": "#ffffff",
   "scope": "/users/",
   "icons": [
     {
